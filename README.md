@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 # Team1_Repository
 =======
 # CommunityBoard
@@ -44,4 +44,4 @@ devops/           - Docker, CI/CD configs
 - [ ] User profiles (TODO)
 - [ ] Notifications (TODO)
 - [ ] Analytics dashboard (TODO)
->>>>>>> 269cf1d (team)
+
