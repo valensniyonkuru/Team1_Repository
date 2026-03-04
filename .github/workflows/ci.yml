@@ -4,7 +4,7 @@ on:
   push:
     branches: [main, staging]
   pull_request:
-    branches: [main,staging]
+    branches: [main]
 
 jobs:
   backend:
@@ -57,5 +57,5 @@ jobs:
         working-directory: ./frontend
         run: npm run build
 
-  # TODO: Add QA test job
+  # TODO: Add QA test jobs
   # TODO: Add Docker build and push job
