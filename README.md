@@ -45,3 +45,49 @@ devops/           - Docker, CI/CD configs
 - [ ] Notifications (TODO)
 - [ ] Analytics dashboard (TODO)
 
+## Git Workflow (Feature Branches)
+
+To keep `main` stable, everyone should work on feature branches and use pull requests:
+
+1. **Start from the latest `main`**
+   ```bash
+   git checkout main
+   git pull origin main
+   ```
+
+2. **Create a feature branch from `main`**
+   ```bash
+   git checkout -b feature/<short-description>
+   # examples:
+   # git checkout -b feature/add-login
+   # git checkout -b bugfix/fix-pagination
+   ```
+
+3. **Do your work and commit**
+   ```bash
+   # edit files...
+   git status
+   git add <files>        # or: git add .
+   git commit -m "Short summary of change"
+   ```
+
+4. **Push the feature branch to GitHub**
+   ```bash
+   git push -u origin feature/<short-description>
+   ```
+
+5. **Open a Pull Request**
+   - On GitHub, open a PR **from** `feature/<short-description>` **into** `main` .
+
+   - Get **1 approval** (required by branch protection) before merging.
+
+6. **Merge and clean up**
+   - Merge the PR via GitHub.
+   - Optionally delete the remote branch in the PR UI.
+   - Update your local `main` and delete the local feature branch:
+     ```bash
+     git checkout main
+     git pull origin main
+     git branch -d feature/<short-description>
+     ```
+
