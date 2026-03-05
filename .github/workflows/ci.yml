@@ -2,7 +2,7 @@ name: CI Pipeline
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, staging]
   pull_request:
     branches: [main]
 
@@ -57,5 +57,5 @@ jobs:
         working-directory: ./frontend
         run: npm run build
 
-  # TODO: Add QA test job
+  # TODO: Add QA test jobs
   # TODO: Add Docker build and push job
