@@ -148,7 +148,9 @@ jobs:
 
           echo "🚀 Starting production deployment..."
 
-          # Navigate to app directory
+          # Ensure app directory exists and is writable
+          sudo mkdir -p /opt/app
+          sudo chown $USER:$USER /opt/app
           cd /opt/app
 
           # Create .env file with production secrets
