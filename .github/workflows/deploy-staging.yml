@@ -134,17 +134,17 @@ jobs:
 
           # Pull latest images
           echo "Pulling latest Docker images..."
-          docker pull ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_NAMESPACE }}/communityboard-backend:staging
-          docker pull ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_NAMESPACE }}/communityboard-frontend:staging
-          docker pull ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_NAMESPACE }}/communityboard-etl:staging
+          sudo docker pull ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_NAMESPACE }}/communityboard-backend:staging
+          sudo docker pull ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_NAMESPACE }}/communityboard-frontend:staging
+          sudo docker pull ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_NAMESPACE }}/communityboard-etl:staging
 
           # Stop existing containers
           echo "Stopping existing containers..."
-          docker-compose -f docker-compose.staging.yml down || true
+          sudo docker-compose -f docker-compose.staging.yml down || true
 
           # Start new containers
           echo "Starting new containers..."
-          docker-compose -f docker-compose.staging.yml up -d
+          sudo docker-compose -f docker-compose.staging.yml up -d
 
           # Wait for database to be ready
           echo "Waiting for database..."
@@ -152,7 +152,7 @@ jobs:
 
           # Verify deployment
           echo "Verifying deployment..."
-          docker-compose -f docker-compose.staging.yml logs backend | head -20
+          sudo docker-compose -f docker-compose.staging.yml logs backend | head -20
 
           echo "Staging deployment completed successfully!"
           EOF

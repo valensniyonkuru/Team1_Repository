@@ -167,21 +167,21 @@ jobs:
 
           # Backup current state
           echo "Creating backup of current deployment..."
-          docker-compose -f docker-compose.production.yml ps > deployment-backup-$(date +%s).log || true
+          sudo docker-compose -f docker-compose.production.yml ps > deployment-backup-$(date +%s).log || true
 
           # Pull latest images
           echo "Pulling latest Docker images..."
-          docker pull ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_NAMESPACE }}/communityboard-backend:latest
-          docker pull ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_NAMESPACE }}/communityboard-frontend:latest
-          docker pull ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_NAMESPACE }}/communityboard-etl:latest
+          sudo docker pull ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_NAMESPACE }}/communityboard-backend:latest
+          sudo docker pull ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_NAMESPACE }}/communityboard-frontend:latest
+          sudo docker pull ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_NAMESPACE }}/communityboard-etl:latest
 
           # Stop existing containers gracefully
           echo "Stopping existing containers..."
-          docker-compose -f docker-compose.production.yml down || true
+          sudo docker-compose -f docker-compose.production.yml down || true
 
           # Start new containers
           echo "Starting new containers..."
-          docker-compose -f docker-compose.production.yml up -d
+          sudo docker-compose -f docker-compose.production.yml up -d
 
           # Wait for services to start
           echo "Waiting for services to be ready..."
@@ -204,13 +204,13 @@ jobs:
 
           if [ $attempt -gt $max_attempts ]; then
             echo "❌ Backend health check failed after $max_attempts attempts"
-            docker-compose -f docker-compose.production.yml logs backend
+            sudo docker-compose -f docker-compose.production.yml logs backend
             exit 1
           fi
 
           # Verify all containers are running
           echo "Verifying all containers are running..."
-          docker-compose -f docker-compose.production.yml ps
+          sudo docker-compose -f docker-compose.production.yml ps
 
           echo "✅ Production deployment completed successfully!"
           EOF
