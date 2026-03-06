@@ -77,7 +77,7 @@ jobs:
         env:
           DEPLOY_KEY: ${{ secrets.EC2_DEPLOY_KEY }}
           DEPLOY_HOST: ${{ secrets.STAGING_EC2_HOST }}
-          DEPLOY_USER: ${{ secrets.STAGING_EC2_USER }}
+          DEPLOY_USER: ${{ secrets.STAGING_EC2_USER || 'ubuntu' }}
         run: |
           # Install SSH key
           mkdir -p ~/.ssh
