@@ -1,0 +1,66 @@
+# Docker ignore file - excludes files from Docker build context
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Version control
+.github
+.gitlab-ci.yml
+.gitlab
+
+# IDEs and editors
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+*.iml
+*.sublime-project
+*.sublime-workspace
+
+# Build artifacts
+target/
+build/
+dist/
+.gradle
+node_modules/
+__pycache__/
+env/
+venv/
+*.egg-info/
+
+# Test files
+coverage/
+.coverage
+junit.xml
+test-results/
+
+# Documentation
+docs/
+*.md
+
+# Build outputs
+*.log
+npm-debug.log
+pip-log.txt
+
+# Environment files (committed one for example only)
+.env.local
+.env.*.local
+
+# OS files
+Thumbs.db
+
+# CI/CD
+.circleci
+.travis.yml
+.github
+
+# Docker
+.dockerignore
+Dockerfile.dev
+docker-compose.yml
+docker-compose.dev.yml

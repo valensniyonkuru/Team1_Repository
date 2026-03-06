@@ -1,0 +1,14 @@
+# Backend .dockerignore
+target/
+.git
+.gitignore
+.idea
+*.iml
+.vscode
+*.swp
+*.swo
+*~
+.DS_Store
+.gradle
+build/
+.m2/

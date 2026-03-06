@@ -1,9 +1,13 @@
 package com.amalitech.communityboard.controller;
 
+import com.amalitech.communityboard.dto.CommentRequest;
 import com.amalitech.communityboard.dto.CommentResponse;
+import com.amalitech.communityboard.model.User;
 import com.amalitech.communityboard.service.CommentService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
@@ -19,6 +23,22 @@ public class CommentController {
         return ResponseEntity.ok(commentService.getCommentsByPost(postId));
     }
 
-    // TODO: Add POST endpoint for creating comments
-    // TODO: Add DELETE endpoint for deleting comments
+    @PostMapping
+    public ResponseEntity<CommentResponse> createComment(
+            @PathVariable Long postId,
+            @Valid @RequestBody CommentRequest request,
+            @AuthenticationPrincipal User author
+    ) {
+        return ResponseEntity.ok(commentService.createComment(postId, request, author));
+    }
+
+    @DeleteMapping("/{commentId}")
+    public ResponseEntity<Void> deleteComment(
+            @PathVariable Long postId,
+            @PathVariable Long commentId,
+            @AuthenticationPrincipal User author
+    ) {
+        commentService.deleteComment(postId, commentId, author);
+        return ResponseEntity.noContent().build();
+    }
 }

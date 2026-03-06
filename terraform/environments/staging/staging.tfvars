@@ -1,0 +1,8 @@
+aws_region             = "eu-north-1"
+vpc_cidr               = "10.0.0.0/16"
+public_subnet_cidr     = "10.0.1.0/24"
+instance_type          = "t3.small"
+root_volume_size       = 30
+ssh_allowed_ip         = "172.25.35.240/32"  # Replace with your IP
+public_key             = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAID/4qtnh1QbJd/tI4RVNsOhtMwlJnZJBgVci8jn+Ix0j devops@communityboard"  # Get from below
+log_retention_days     = 14

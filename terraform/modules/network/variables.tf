@@ -1,0 +1,27 @@
+variable "environment" {
+  description = "Environment name (staging or production)"
+  type        = string
+}
+
+variable "vpc_cidr" {
+  description = "CIDR block for VPC"
+  type        = string
+  default     = "10.0.0.0/16"
+}
+
+variable "public_subnet_cidr" {
+  description = "CIDR block for public subnet"
+  type        = string
+  default     = "10.0.1.0/24"
+}
+
+variable "availability_zone" {
+  description = "Availability zone for resources"
+  type        = string
+}
+
+variable "ssh_allowed_ip" {
+  description = "IP address allowed for SSH access (CIDR format)"
+  type        = string
+  sensitive   = true
+}

@@ -1,6 +1,8 @@
 package com.amalitech.communityboard.service;
 
 import com.amalitech.communityboard.dto.*;
+import com.amalitech.communityboard.exception.ForbiddenException;
+import com.amalitech.communityboard.exception.NotFoundException;
 import com.amalitech.communityboard.model.*;
 import com.amalitech.communityboard.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -20,11 +22,35 @@ public class CommentService {
                 .map(this::toResponse).toList();
     }
 
-    // TODO: Implement createComment
-    // public CommentResponse createComment(Long postId, CommentRequest request, User author) { ... }
+    public CommentResponse createComment(Long postId, CommentRequest request, User author) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new NotFoundException("Post not found"));
 
-    // TODO: Implement deleteComment
-    // public void deleteComment(Long commentId, User author) { ... }
+        Comment comment = Comment.builder()
+                .content(request.getContent())
+                .post(post)
+                .author(author)
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        return toResponse(commentRepository.save(comment));
+    }
+
+    public void deleteComment(Long postId, Long commentId, User author) {
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new NotFoundException("Comment not found"));
+
+        if (!comment.getPost().getId().equals(postId)) {
+            throw new NotFoundException("Comment not found for this post");
+        }
+
+        boolean isOwner = comment.getAuthor().getId().equals(author.getId());
+        boolean isAdmin = author.getRole() != null && author.getRole().name().equals("ADMIN");
+        if (!isOwner && !isAdmin) {
+            throw new ForbiddenException("Not authorized to delete this comment");
+        }
+        commentRepository.delete(comment);
+    }
 
     private CommentResponse toResponse(Comment comment) {
         return CommentResponse.builder()

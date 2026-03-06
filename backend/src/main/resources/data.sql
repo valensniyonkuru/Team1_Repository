@@ -1,10 +1,12 @@
--- Seed categories
+-- Seed categories (MVP-required)
 INSERT INTO categories (id, name, description) VALUES
-  (1, 'General', 'General discussions and announcements'),
-  (2, 'Events', 'Upcoming community events'),
-  (3, 'Tech', 'Technology related posts'),
-  (4, 'Help', 'Questions and help requests')
-ON CONFLICT (id) DO NOTHING;
+  (1, 'NEWS', 'Neighborhood news and updates'),
+  (2, 'EVENT', 'Local events and meetups'),
+  (3, 'DISCUSSION', 'Open discussions and questions'),
+  (4, 'ALERT', 'Urgent alerts and safety notices')
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  description = EXCLUDED.description;
 
 -- Seed admin user (password: password123, BCrypt encoded)
 INSERT INTO users (id, email, name, password, role, created_at) VALUES

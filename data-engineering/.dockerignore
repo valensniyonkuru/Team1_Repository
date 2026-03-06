@@ -1,0 +1,13 @@
+# Data Engineering .dockerignore
+__pycache__
+.pyc
+.env
+.venv
+venv/
+*.log
+.idea
+.vscode
+.git
+.gitignore
+*.swp
+.DS_Store
