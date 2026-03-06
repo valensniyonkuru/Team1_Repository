@@ -19,3 +19,8 @@ INSERT INTO posts (id, title, content, category_id, author_id, created_at, updat
   (1, 'Welcome to CommunityBoard!', 'This is our new community platform. Feel free to post announcements, share events, and discuss topics.', 1, 1, NOW(), NOW()),
   (2, 'Upcoming Team Building Event', 'We are organizing a cross-location team building event next Friday. Details to follow.', 2, 1, NOW(), NOW())
 ON CONFLICT (id) DO NOTHING;
+
+-- Sync sequences so auto-increment works after manual inserts
+SELECT setval('categories_id_seq', (SELECT MAX(id) FROM categories));
+SELECT setval('users_id_seq', (SELECT MAX(id) FROM users));
+SELECT setval('posts_id_seq', (SELECT MAX(id) FROM posts));
