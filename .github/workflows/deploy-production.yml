@@ -142,15 +142,18 @@ jobs:
               --availability-zone $(aws ec2 describe-instances --instance-ids "$INSTANCE_ID" --query "Reservations[0].Instances[0].Placement.AvailabilityZone" --output text)
           fi
 
+          # Ensure target directory exists and is writable
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no "$DEPLOY_USER@$DEPLOY_HOST" "sudo mkdir -p /opt/app && sudo chown $USER:$USER /opt/app"
+          
+          # Copy docker-compose file
+          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no docker-compose.production.yml "$DEPLOY_USER@$DEPLOY_HOST:/opt/app/docker-compose.production.yml"
+          
           # Deploy script
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no "$DEPLOY_USER@$DEPLOY_HOST" <<'EOF'
           set -e
 
           echo "🚀 Starting production deployment..."
 
-          # Ensure app directory exists and is writable
-          sudo mkdir -p /opt/app
-          sudo chown $USER:$USER /opt/app
           cd /opt/app
 
           # Create .env file with production secrets
