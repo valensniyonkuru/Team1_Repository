@@ -1,2 +1,0 @@
--- Categories are now handled by DataInitializer.java for better reliability.
--- This file is kept empty to avoid conflicts with programmatic seeding.

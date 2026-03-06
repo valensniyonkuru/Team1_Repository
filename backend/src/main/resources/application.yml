@@ -13,7 +13,7 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
   sql:
     init:
-      mode: always
+      mode: never
 
 jwt:
   secret: ${JWT_SECRET:communityboard-secret-key-amalitech-2024}
