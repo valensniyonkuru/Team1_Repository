@@ -15,7 +15,7 @@ env:
 jobs:
   test:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -23,8 +23,8 @@ jobs:
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
-          distribution: 'temurin'
+          java-version: "17"
+          distribution: "temurin"
           cache: maven
 
       - name: Run backend tests
@@ -35,9 +35,9 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: 'frontend/package-lock.json'
+          node-version: "18"
+          cache: "npm"
+          cache-dependency-path: "frontend/package-lock.json"
 
       - name: Run frontend tests
         run: |
@@ -48,7 +48,7 @@ jobs:
   build:
     needs: test
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -104,7 +104,7 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -128,12 +128,12 @@ jobs:
           echo "$DEPLOY_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
-          
+
           # Push public key to EC2 via AWS Instance Connect
           echo "Pushing SSH key via AWS Instance Connect..."
           PUBLIC_KEY=$(ssh-keygen -y -f ~/.ssh/deploy_key)
           INSTANCE_ID=$(aws ec2 describe-instances --filters "Name=ip-address,Values=$DEPLOY_HOST" --query "Reservations[0].Instances[0].InstanceId" --output text)
-          
+
           if [ "$INSTANCE_ID" != "None" ] && [ -n "$INSTANCE_ID" ]; then
             aws ec2-instance-connect send-ssh-public-key \
               --instance-id "$INSTANCE_ID" \
@@ -141,16 +141,16 @@ jobs:
               --ssh-public-key "$PUBLIC_KEY" \
               --availability-zone $(aws ec2 describe-instances --instance-ids "$INSTANCE_ID" --query "Reservations[0].Instances[0].Placement.AvailabilityZone" --output text)
           fi
-          
+
           # Deploy script
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no "$DEPLOY_USER@$DEPLOY_HOST" <<'EOF'
           set -e
-          
+
           echo "🚀 Starting production deployment..."
-          
+
           # Navigate to app directory
           cd /opt/app
-          
+
           # Create .env file with production secrets
           cat > .env <<'ENVEOF'
           DB_NAME=${{ secrets.PRODUCTION_DB_NAME }}
@@ -162,34 +162,34 @@ jobs:
           DOCKER_REGISTRY=${{ env.DOCKER_REGISTRY }}
           DOCKER_NAMESPACE=${{ env.DOCKER_NAMESPACE }}
           ENVEOF
-          
+
           # Backup current state
           echo "Creating backup of current deployment..."
           docker-compose -f docker-compose.production.yml ps > deployment-backup-$(date +%s).log || true
-          
+
           # Pull latest images
           echo "Pulling latest Docker images..."
           docker pull ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_NAMESPACE }}/communityboard-backend:latest
           docker pull ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_NAMESPACE }}/communityboard-frontend:latest
           docker pull ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_NAMESPACE }}/communityboard-etl:latest
-          
+
           # Stop existing containers gracefully
           echo "Stopping existing containers..."
           docker-compose -f docker-compose.production.yml down || true
-          
+
           # Start new containers
           echo "Starting new containers..."
           docker-compose -f docker-compose.production.yml up -d
-          
+
           # Wait for services to start
           echo "Waiting for services to be ready..."
           sleep 15
-          
+
           # Health checks
           echo "Running health checks..."
           max_attempts=30
           attempt=1
-          
+
           while [ $attempt -le $max_attempts ]; do
             if curl -f http://localhost:8080/actuator/health > /dev/null 2>&1; then
               echo "✅ Backend health check passed"
@@ -199,17 +199,17 @@ jobs:
             sleep 2
             attempt=$((attempt + 1))
           done
-          
+
           if [ $attempt -gt $max_attempts ]; then
             echo "❌ Backend health check failed after $max_attempts attempts"
             docker-compose -f docker-compose.production.yml logs backend
             exit 1
           fi
-          
+
           # Verify all containers are running
           echo "Verifying all containers are running..."
           docker-compose -f docker-compose.production.yml ps
-          
+
           echo "✅ Production deployment completed successfully!"
           EOF
 

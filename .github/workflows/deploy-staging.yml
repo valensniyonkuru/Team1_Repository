@@ -15,7 +15,7 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -71,7 +71,7 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -95,12 +95,12 @@ jobs:
           echo "$DEPLOY_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
-          
+
           # Push public key to EC2 via AWS Instance Connect
           echo "Pushing SSH key via AWS Instance Connect..."
           PUBLIC_KEY=$(ssh-keygen -y -f ~/.ssh/deploy_key)
           INSTANCE_ID=$(aws ec2 describe-instances --filters "Name=ip-address,Values=$DEPLOY_HOST" --query "Reservations[0].Instances[0].InstanceId" --output text)
-          
+
           if [ "$INSTANCE_ID" != "None" ] && [ -n "$INSTANCE_ID" ]; then
             aws ec2-instance-connect send-ssh-public-key \
               --instance-id "$INSTANCE_ID" \
@@ -108,16 +108,16 @@ jobs:
               --ssh-public-key "$PUBLIC_KEY" \
               --availability-zone $(aws ec2 describe-instances --instance-ids "$INSTANCE_ID" --query "Reservations[0].Instances[0].Placement.AvailabilityZone" --output text)
           fi
-          
+
           # Deploy script
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no "$DEPLOY_USER@$DEPLOY_HOST" <<'EOF'
           set -e
-          
+
           echo "Deploying to staging environment..."
-          
+
           # Navigate to app directory
           cd /opt/app
-          
+
           # Create .env file
           cat > .env <<'ENVEOF'
           DB_NAME=${{ secrets.STAGING_DB_NAME }}
@@ -129,29 +129,29 @@ jobs:
           DOCKER_REGISTRY=${{ env.DOCKER_REGISTRY }}
           DOCKER_NAMESPACE=${{ env.DOCKER_NAMESPACE }}
           ENVEOF
-          
+
           # Pull latest images
           echo "Pulling latest Docker images..."
           docker pull ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_NAMESPACE }}/communityboard-backend:staging
           docker pull ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_NAMESPACE }}/communityboard-frontend:staging
           docker pull ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_NAMESPACE }}/communityboard-etl:staging
-          
+
           # Stop existing containers
           echo "Stopping existing containers..."
           docker-compose -f docker-compose.staging.yml down || true
-          
+
           # Start new containers
           echo "Starting new containers..."
           docker-compose -f docker-compose.staging.yml up -d
-          
+
           # Wait for database to be ready
           echo "Waiting for database..."
           sleep 10
-          
+
           # Verify deployment
           echo "Verifying deployment..."
           docker-compose -f docker-compose.staging.yml logs backend | head -20
-          
+
           echo "Staging deployment completed successfully!"
           EOF
 
