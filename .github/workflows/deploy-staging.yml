@@ -76,6 +76,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-north-1
+
       - name: Deploy to Staging EC2
         env:
           DEPLOY_KEY: ${{ secrets.EC2_DEPLOY_KEY }}
@@ -87,6 +94,19 @@ jobs:
           echo "$DEPLOY_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+          
+          # Push public key to EC2 via AWS Instance Connect
+          echo "Pushing SSH key via AWS Instance Connect..."
+          PUBLIC_KEY=$(ssh-keygen -y -f ~/.ssh/deploy_key)
+          INSTANCE_ID=$(aws ec2 describe-instances --filters "Name=ip-address,Values=$DEPLOY_HOST" --query "Reservations[0].Instances[0].InstanceId" --output text)
+          
+          if [ "$INSTANCE_ID" != "None" ] && [ -n "$INSTANCE_ID" ]; then
+            aws ec2-instance-connect send-ssh-public-key \
+              --instance-id "$INSTANCE_ID" \
+              --instance-os-user "$DEPLOY_USER" \
+              --ssh-public-key "$PUBLIC_KEY" \
+              --availability-zone $(aws ec2 describe-instances --instance-ids "$INSTANCE_ID" --query "Reservations[0].Instances[0].Placement.AvailabilityZone" --output text)
+          fi
           
           # Deploy script
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no "$DEPLOY_USER@$DEPLOY_HOST" <<'EOF'
