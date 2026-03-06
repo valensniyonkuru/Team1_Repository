@@ -26,6 +26,9 @@ Thumbs.db
 **/terraform.tfvars
 **/*-prod.tfvars
 **/*-staging.tfvars
+**/staging.tfvars
+**/production.tfvars
+**/terraform.tfvars.json
 !**/*-example.tfvars
 
 # SSH and credentials
