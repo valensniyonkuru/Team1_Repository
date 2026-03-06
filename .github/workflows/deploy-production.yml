@@ -73,6 +73,7 @@ jobs:
             ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_NAMESPACE }}/communityboard-backend:v${{ github.run_number }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          provenance: false
 
       - name: Build and push frontend image
         uses: docker/build-push-action@v5
@@ -85,6 +86,7 @@ jobs:
             ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_NAMESPACE }}/communityboard-frontend:v${{ github.run_number }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          provenance: false
 
       - name: Build and push ETL image
         uses: docker/build-push-action@v5
@@ -97,6 +99,7 @@ jobs:
             ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_NAMESPACE }}/communityboard-etl:v${{ github.run_number }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          provenance: false
 
   deploy:
     needs: build
