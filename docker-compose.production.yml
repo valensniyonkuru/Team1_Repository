@@ -27,7 +27,7 @@ services:
         max-file: "5"
 
   backend:
-    image: communityboard-backend:latest
+    image: ${DOCKER_REGISTRY}/${DOCKER_NAMESPACE}/communityboard-backend:latest
     build:
       context: .
       dockerfile: backend/Dockerfile.prod
@@ -61,7 +61,7 @@ services:
       start_period: 40s
 
   frontend:
-    image: communityboard-frontend:latest
+    image: ${DOCKER_REGISTRY}/${DOCKER_NAMESPACE}/communityboard-frontend:latest
     build:
       context: .
       dockerfile: frontend/Dockerfile.prod
@@ -82,7 +82,7 @@ services:
         max-file: "5"
 
   etl:
-    image: communityboard-etl:latest
+    image: ${DOCKER_REGISTRY}/${DOCKER_NAMESPACE}/communityboard-etl:latest
     build:
       context: .
       dockerfile: data-engineering/Dockerfile.prod

@@ -1,6 +1,6 @@
 # Multi-stage build for Spring Boot application
 # Stage 1: Build
-FROM eclipse-temurin:17-jdk-jammy as builder
+FROM maven:3.8.4-openjdk-17-slim as builder
 
 WORKDIR /build
 
@@ -17,9 +17,10 @@ RUN mvn clean package -DskipTests
 # Stage 2: Runtime
 FROM eclipse-temurin:17-jre-jammy
 
-# Install security updates
+# Install security updates and curl
 RUN apt-get update && \
     apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends curl && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -40,7 +41,7 @@ USER appuser
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-    CMD java -cp app.jar org.springframework.boot.loader.Launch healthcheck || exit 1
+    CMD curl -f http://localhost:8080/actuator/health || exit 1
 
 # Expose port
 EXPOSE 8080
