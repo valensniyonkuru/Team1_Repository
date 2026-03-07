@@ -35,7 +35,7 @@ const Login = () => {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#fdfdfd] px-4">
-      <div id="login-card" className="w-full max-w-[428px] rounded-3xl border border-[#e6eaeb] px-8 py-6">
+      <div id="login-card" className="w-full max-w-[428px] border-transparent px-6 py-6 sm:rounded-3xl sm:border-[#e6eaeb] sm:px-8">
         <div className="flex flex-col items-center gap-12">
           {/* Header */}
           <div className="flex w-full max-w-[311px] flex-col items-center gap-8">
