@@ -33,16 +33,16 @@ const CreatePost = () => {
 
   return (
     <div style={{ maxWidth: 600, margin: "60px auto" }}>
-      <h1>Create New Post</h1>
-      {error && <p style={{ color: "red" }}>{error}</p>}
-      <form onSubmit={handleSubmit}>
-        <input type="text" placeholder="Post Title" value={title} onChange={(e) => setTitle(e.target.value)} required />
-        <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
+      <h1 id="create-post-heading">Create New Post</h1>
+      {error && <p id="create-post-error" style={{ color: "red" }}>{error}</p>}
+      <form id="create-post-form" onSubmit={handleSubmit}>
+        <input id="create-post-title" type="text" placeholder="Post Title" value={title} onChange={(e) => setTitle(e.target.value)} required />
+        <select id="create-post-category" value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
           <option value="">Select Category (optional)</option>
           {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
-        <textarea rows={8} placeholder="Write your post content..." value={content} onChange={(e) => setContent(e.target.value)} required />
-        <button type="submit" className="btn btn-primary" style={{ width: "100%" }}>Publish Post</button>
+        <textarea id="create-post-content" rows={8} placeholder="Write your post content..." value={content} onChange={(e) => setContent(e.target.value)} required />
+        <button id="create-post-submit" type="submit" className="btn btn-primary" style={{ width: "100%" }}>Publish Post</button>
       </form>
     </div>
   );

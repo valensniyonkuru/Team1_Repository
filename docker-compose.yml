@@ -28,13 +28,32 @@ services:
       postgres:
         condition: service_healthy
     restart: on-failure
+    develop:
+      watch:
+        - action: rebuild
+          path: ./backend/src
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
     ports:
       - "3000:3000"
+    environment:
+      - WATCHPACK_POLLING=true
+      - WDS_SOCKET_PORT=3000
     depends_on:
       - backend
+    develop:
+      watch:
+        - action: sync
+          path: ./frontend/src
+          target: /app/src
+        - action: sync
+          path: ./frontend/public
+          target: /app/public
+        - action: rebuild
+          path: ./frontend/package.json
 
   etl:
     build: ./data-engineering
