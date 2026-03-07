@@ -42,7 +42,7 @@ jobs:
       - name: Run frontend tests
         run: |
           cd frontend
-          npm ci
+          npm install --legacy-peer-deps
           npm test -- --coverage --watchAll=false
 
   build:
