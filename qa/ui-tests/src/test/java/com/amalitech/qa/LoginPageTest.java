@@ -29,11 +29,12 @@ public class LoginPageTest {
     public void testLoginPageLoads() {
         driver.get("http://localhost:3000/login");
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
-        wait.until(ExpectedConditions.titleContains("CommunityBoard"));
+        wait.until(ExpectedConditions.titleContains("Ping"));
         
-        assertTrue(driver.getTitle().contains("CommunityBoard"));
-        assertNotNull(driver.findElement(By.cssSelector("input[type=\"email\"]")));
-        assertNotNull(driver.findElement(By.cssSelector("input[type=\"password\"]")));
+        assertTrue(driver.getTitle().contains("Ping"));
+        assertNotNull(driver.findElement(By.id("login-email")));
+        assertNotNull(driver.findElement(By.id("login-password")));
+        assertNotNull(driver.findElement(By.id("login-submit")));
     }
 
     // TODO: Add more UI tests
