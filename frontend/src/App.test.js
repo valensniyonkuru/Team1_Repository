@@ -1,8 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import App from './App';
 
-test('renders community board branding', () => {
+test('renders Ping branding', () => {
   render(<App />);
-  const linkElement = screen.getByText(/CommunityBoard/i);
-  expect(linkElement).toBeInTheDocument();
+  const logoElement = screen.getByAltText(/Ping/i);
+  expect(logoElement).toBeInTheDocument();
 });
