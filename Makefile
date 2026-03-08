@@ -20,6 +20,14 @@ init: ## Initialize Terraform
 	cd $(TERRAFORM_DIR)/environments/$(STAGING_ENV) && terraform init
 	cd $(TERRAFORM_DIR)/environments/$(PROD_ENV) && terraform init
 
+init-hooks: ## Install Git pre-commit hooks
+	@echo "Installing specialized Git hooks..."
+	@mkdir -p .git/hooks
+	@cp scripts/git-hooks/pre-commit .git/hooks/pre-commit
+	@chmod +x .git/hooks/pre-commit
+	@echo "✅ Pre-commit hooks installed successfully!"
+
+
 plan-staging: ## Plan staging infrastructure
 	@echo "Planning staging infrastructure..."
 	cd $(TERRAFORM_DIR)/environments/$(STAGING_ENV) && terraform plan -var-file="staging.tfvars"
