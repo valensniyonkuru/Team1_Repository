@@ -136,21 +136,78 @@ To run the application, the following database environment variables must be def
 
 ---
 
-## 7. Git Workflow
+## 7. Git Workflow & Branching Model
 
-We follow a strict **Feature Branch Workflow**. The `main` branch is our production environment and is locked from direct commits.
+We follow a strict **Feature Branch Workflow** utilizing `develop` for Staging and `main` for Production. 
 
-1. **Create a Feature Branch:** Always branch off `main` (or `develop`).
-   ```bash
-   git checkout main
-   git pull
-   git checkout -b feature/your-feature-name
-   ```
-2. **Commit Code:** When you run `git commit`, the **pre-commit hook** automatically checks for secrets, large files, and restricts commits to protected branches.
-3. **Push Branch:** `git push origin feature/your-feature-name`
-4. **Open a Pull Request (PR):** Target the `main` or `develop` branch.
-5. **CI Pipeline Runs:** GitHub Actions automatically tests and lints your code.
-6. **Merge & Deploy:** Once approved, merging to `develop` deploys to Staging. Merging to `main` deploys to Production.
+### The Step-by-Step Developer Flow:
+
+**Step 1 – Clone repository**
+Ensure you have cloned the project and run `make init-hooks`.
+
+**Step 2 – Create feature branch**
+Always branch off the `develop` branch for new features.
+```bash
+git checkout develop
+git pull origin develop
+git checkout -b feature/your-feature-name
+```
+
+**Step 3 – Implement feature**
+Write your code, test locally using `docker-compose up`, and make meaningful commits. The pre-commit hook will validate your code for secrets and file sizes.
+```bash
+git commit -m "feat: adding new community guidelines page"
+```
+
+**Step 4 – Push branch**
+Push your changes to GitHub.
+```bash
+git push origin feature/your-feature-name
+```
+
+**Step 5 – Create Pull Request**
+Open a Pull Request on GitHub.
+- **Base branch:** `develop`
+- **Compare branch:** `feature/your-feature-name`
+
+### What happens next?
+- **CI Pipeline Runs:** Automatic tests are executed (`test-pr.yml`).
+- **Code Review:** Peers review your code.
+- **Merge into Develop:** Your PR is approved and merged into `develop`.
+- **Staging Deployment:** Merging into `develop` automatically triggers `deploy-staging.yml` which updates the staging server.
+
+### The `develop` → `main` Workflow (Production Release)
+Once community testing on Staging is complete and stable:
+1. Create a PR from `develop` -> `main`.
+2. The CI pipeline validates the PR again.
+3. Upon merging to `main`, `deploy-production.yml` automatically builds and pushes the live code to the Production AWS EC2 server.
+
+### Visual Git Workflow Diagram
+
+```text
+ Developer
+    │
+    ▼
+ Feature Branch
+    │
+    ▼
+ Pull Request → develop (Base branch)
+    │
+    ▼
+ CI Pipeline (Tests & Security)
+    │
+    ▼
+ Deploy to Staging (Automatic via `deploy-staging.yml`)
+    │
+    ▼
+ PR develop → main
+    │
+    ▼
+ CI Pipeline (Validation)
+    │
+    ▼
+ Deploy to Production (Automatic via `deploy-production.yml`)
+```
 
 ---
 
@@ -166,24 +223,77 @@ Our `.github/workflows/` directory automates our DevOps lifecycle:
 
 ---
 
-## 9. Database Setup and Access
+## 9. Database Setup and Architecture
 
-Security and connectivity are handled seamlessly by Docker:
+The database requires strict management to keep our application fast and users' data safe. 
 
-- **Inside Docker:** The backend and ETL pipeline do not use `localhost` to find the database. They connect using the internal Docker DNS name: `postgres` (or whatever `DB_HOST` is set to).
-- **Network Isolation:** Our `docker-compose` files place all services on a custom bridge network (e.g., `communityboard-prod`). The AWS firewall blocks external access to port `5432`, meaning the database is 100% inaccessible from the public internet, but fully open to your backend and ETL containers.
-- **Persistence:** User data survives container restarts because it is mapped to a robust Docker Volume: `pgdata-prod:/var/lib/postgresql/data`.
+### How It Works on the Server
+- PostgreSQL runs completely inside a Docker container (`communityboard-db-prod`).
+- **It is NOT publicly exposed.** AWS Security Groups and Docker block external access to port `5432`.
+- Only the backend and ETL containers can access it internally through the Docker network.
+
+### Database Access Diagram
+
+```mermaid
+graph LR
+    Frontend(["React Frontend (User)"]) -->|HTTP/HTTPS| Backend["Backend (Spring Boot)"]
+    
+    subgraph Docker Network [Docker Bridge Network: communityboard-prod]
+        Backend -->|JDBC | DB[("PostgreSQL\n( communityboard-db-prod )")]
+        ETL["Python ETL\n(Data Engineering)"] -->|SQLAlchemy| DB
+    end
+
+    style DB fill:#336791,stroke:#fff,color:#fff
+```
+
+### Connection Configuration
+The ETL and Backend services dynamically discover the database using Docker networking. They read an environment variable where the host points to the container name:
+- `DB_HOST=postgres`
+- `DB_PORT=5432`
+
+### Safety Rules 🔒
+- **Never expose the PostgreSQL port to the public internet!**
+- **Never store database passwords in the codebase!**
+- **Always use environment variables (`.env`) for configuration.**
+- **Always use Pull Requests before merging features into `develop` or `main`.**
 
 ---
 
-## 10. Production Deployment Overview
+## 10. Accessing the Production Server (For DevOps / Maintainers)
 
-When a PR is merged into `main`:
-1. GitHub Actions runner compiles the Java and React code.
-2. It builds streamlined, multi-stage Docker images (`Dockerfile.prod`) and pushes them to Docker Hub.
-3. Using AWS Instance Connect, it pushes a temporary SSH key to the Production EC2 instance.
-4. It SSHs into the server, copies the `docker-compose.production.yml` and `.env` securely.
-5. Finally, it pulls the new images and runs `docker-compose up -d`. Zero human intervention required.
+While GitHub Actions automates deployment, DevOps engineers or maintainers might occasionally need manual access for checking logs or debugging container issues.
+
+**Production Server Details:**
+- **Instance Name:** `production-app-instance`
+- **Public IP:** `13.49.109.150`
+
+### 1. Connect via SSH
+Ensure you have the private deployment key locally.
+```bash
+ssh -i deploy_key ubuntu@13.49.109.150
+```
+
+### 2. Verify Running Containers
+Verify that all the production services (backend, frontend, postgres, etl) are running efficiently.
+```bash
+docker ps
+```
+
+### 3. Check Live Application Logs
+If a deployment fails or users report an error, tail the live production logs.
+```bash
+# Check all logs
+docker-compose -f docker-compose.production.yml logs -f
+
+# Check only backend logs
+docker-compose -f docker-compose.production.yml logs -f backend
+```
+
+### 4. Interact with the Database Container directly
+If you need to verify database tables or check migrations:
+```bash
+docker exec -it communityboard-db-prod psql -U postgres -d communityboard
+```
 
 ---
 
