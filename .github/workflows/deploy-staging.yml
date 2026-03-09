@@ -110,11 +110,11 @@ jobs:
           fi
 
           # Ensure target directory exists and is writable
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no "$DEPLOY_USER@$DEPLOY_HOST" "sudo mkdir -p /opt/app && sudo chown $USER:$USER /opt/app"
-          
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no "$DEPLOY_USER@$DEPLOY_HOST" "sudo mkdir -p /opt/app && sudo chown $DEPLOY_USER:$DEPLOY_USER /opt/app"
+
           # Copy docker-compose file
           scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no docker-compose.staging.yml "$DEPLOY_USER@$DEPLOY_HOST:/opt/app/docker-compose.staging.yml"
-          
+
           # Deploy script
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no "$DEPLOY_USER@$DEPLOY_HOST" <<'EOF'
           set -e
