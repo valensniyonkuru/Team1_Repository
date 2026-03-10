@@ -60,36 +60,53 @@ def clear_existing_data(conn: Connection) -> None:
 def upsert_users(conn: Connection, n_users: int) -> List[int]:
     """Insert or update users by unique email; returns all user IDs."""
     users = []
+    BCRYPT_PASSWORD = "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy"  # password123
 
-    # Ensure at least one admin
-    for i in range(n_users):
-        role = "ADMIN" if i == 0 else "USER"
+    fixed_users = [
+        {
+            "email": "admin@amalitech.com",
+            "name": "Admin User",
+            "password": BCRYPT_PASSWORD,
+            "role": "ADMIN",
+            "created_at": rand_ts(180),
+        },
+        {
+            "email": "user@amalitech.com",
+            "name": "Test User",
+            "password": BCRYPT_PASSWORD,
+            "role": "USER",
+            "created_at": rand_ts(180),
+        },
+    ]
+
+    users.extend(fixed_users)
+
+    remaining = max(0, n_users - len(fixed_users))
+    for _ in range(remaining):
         users.append(
             {
-                "created_at": rand_ts(60),
                 "email": fake.unique.email(),
                 "name": fake.name(),
-                "password": "seeded_password",
-                "role": role,
+                "password": BCRYPT_PASSWORD,
+                "role": "USER",
+                "created_at": rand_ts(180),
             }
         )
 
-    # UPSERT row-by-row for correctness (email is unique); n_users is small.
     sql = text("""
         INSERT INTO users (created_at, email, name, password, role)
         VALUES (:created_at, :email, :name, :password, :role)
         ON CONFLICT (email) DO UPDATE SET
             name = EXCLUDED.name,
+            password = EXCLUDED.password,
             role = EXCLUDED.role
     """)
 
     for row in users:
         conn.execute(sql, row)
 
-    # Return current IDs (all users in table)
     ids = [r[0] for r in conn.execute(text("SELECT id FROM users ORDER BY id;")).fetchall()]
     return ids
-
 
 def insert_posts(conn: Connection, user_ids: List[int], category_ids: List[int], n_posts: int) -> List[int]:
     """Insert posts with category-specific keywords and a date range spanning 3+ months."""
