@@ -69,8 +69,7 @@ def upsert_users(conn: Connection, n_users: int) -> List[int]:
                 "created_at": rand_ts(60),
                 "email": fake.unique.email(),
                 "name": fake.name(),
-                # This is NOT for app login (backend expects hashed passwords on registration).
-                "password": "seeded_password_not_for_login",
+                "password": "seeded_password",
                 "role": role,
             }
         )
