@@ -69,6 +69,22 @@ resource "aws_security_group" "app" {
     description = "SSH access from authorized IP"
   }
 
+  ingress {
+    from_port   =3000
+    to_port     = 3000
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "Application frontend port"
+  }
+
+
+  ingress {
+    from_port   =5432
+    to_port     = 5432
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "database port"
+  }
   # HTTP
   ingress {
     from_port   = 80
