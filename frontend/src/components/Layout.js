@@ -1,0 +1,16 @@
+import React from "react";
+import { Outlet } from "react-router-dom";
+import Navbar from "./Navbar";
+
+const Layout = () => {
+  return (
+    <div className="min-h-screen bg-ping-bg font-sans text-ink flex flex-col">
+      <Navbar />
+      <main className="flex-1 w-full relative">
+        <Outlet />
+      </main>
+    </div>
+  );
+};
+
+export default Layout;
