@@ -1,54 +1,69 @@
-# Multi-stage build for React frontend
-# Stage 1: Build
+# Production Dockerfile for React frontend
+# Built from repository root context: docker build -f frontend/Dockerfile.prod .
+#
+# IMPORTANT: REACT_APP_API_URL must be passed at BUILD time, not runtime.
+# CRA (create-react-app) bakes REACT_APP_* variables into the JS bundle.
+# Usage: docker build --build-arg REACT_APP_API_URL=https://api.example.com -f frontend/Dockerfile.prod .
+
+# Stage 1: Build React app
 FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
-COPY frontend/package*.json ./
+# Build-time variable for API URL (baked into the React bundle)
+ARG REACT_APP_API_URL=http://localhost:8080
+ENV REACT_APP_API_URL=$REACT_APP_API_URL
 
-# Install dependencies
-RUN npm install --legacy-peer-deps && npm cache clean --force
+# Copy package files first (cache layer for dependencies)
+COPY frontend/package*.json ./
+RUN npm ci --legacy-peer-deps && npm cache clean --force
 
 # Copy source code
 COPY frontend/src ./src
 COPY frontend/public ./public
 
-# Build application
+# Build production bundle
 RUN npm run build
 
-# Stage 2: Runtime with Nginx
+# Stage 2: Serve with nginx (non-root, port 3000)
 FROM nginx:alpine
 
-# Install curl for health checks and remove unnecessary files
-RUN apk add --no-cache curl && \
-    rm -rf /etc/nginx/conf.d/* && \
-    rm -rf /usr/share/nginx/html/*
-
-# Copy nginx configuration
-COPY frontend/nginx.conf /etc/nginx/nginx.conf
+# Install curl for health checks and apply security updates
+RUN apk add --no-cache curl && apk upgrade
 
 # Create non-root user
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
-# Copy built application from builder
+# Copy full nginx configuration (replaces default nginx.conf)
+COPY frontend/nginx.conf /etc/nginx/nginx.conf
+
+# Copy built React app from builder
 COPY --from=builder /app/build /usr/share/nginx/html
 
-# Change ownership
-RUN chown -R appuser:appgroup /usr/share/nginx/html && \
-    chown -R appuser:appgroup /var/log/nginx && \
-    touch /var/run/nginx.pid && \
-    chown appuser:appgroup /var/run/nginx.pid
+# Create writable tmp dirs required for non-root nginx operation
+RUN mkdir -p \
+        /tmp/client_temp \
+        /tmp/proxy_temp \
+        /tmp/fastcgi_temp \
+        /tmp/uwsgi_temp \
+        /tmp/scgi_temp
 
-# Switch to non-root user
+# Set ownership of all directories nginx needs to write to
+RUN chown -R appuser:appgroup \
+        /usr/share/nginx/html \
+        /var/log/nginx \
+        /tmp/client_temp \
+        /tmp/proxy_temp \
+        /tmp/fastcgi_temp \
+        /tmp/uwsgi_temp \
+        /tmp/scgi_temp
+
 USER appuser
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-    CMD curl -f http://localhost/index.html || exit 1
-
-# Expose port
 EXPOSE 3000
 
-# Run nginx
+# Health check against the /health endpoint defined in nginx.conf
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost:3000/health || exit 1
+
 CMD ["nginx", "-g", "daemon off;"]

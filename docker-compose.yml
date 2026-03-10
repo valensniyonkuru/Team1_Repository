@@ -1,42 +1,69 @@
+# docker-compose.yml — Local Development
+# Usage: docker compose up -d
+# Loads .env automatically if present. Copy .env.develop → .env to get started.
+# See also: docker-compose.staging.yml, docker-compose.production.yml
+
 services:
   postgres:
     image: postgres:15-alpine
+    container_name: communityboard-db-dev
+    restart: unless-stopped
     environment:
-      POSTGRES_DB: communityboard
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${DB_NAME:-communityboard}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-dev_password_change_me}
     ports:
+      # Expose only on loopback so only the host machine can reach the DB
       - "5432:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - pgdata-dev:/var/lib/postgresql/data
+    networks:
+      - communityboard-dev
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d communityboard"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-communityboard}"]
       interval: 5s
       timeout: 5s
       retries: 20
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
 
   backend:
-    build: ./backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: communityboard-backend-dev
+    restart: unless-stopped
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${DB_NAME:-communityboard}
+      SPRING_DATASOURCE_USERNAME: ${DB_USER:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-dev_password_change_me}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_PROFILES_ACTIVE: development
+      JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-not-for-production-use}
+      SERVER_PORT: 8080
     ports:
       - "8080:8080"
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/communityboard
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: postgres
-      JWT_SECRET: communityboard-secret-key-amalitech-2024
     depends_on:
       postgres:
         condition: service_healthy
-    restart: on-failure
-    develop:
-      watch:
-        - action: rebuild
-          path: ./backend/src
+    networks:
+      - communityboard-dev
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
+    container_name: communityboard-frontend-dev
+    restart: unless-stopped
     ports:
       - "3000:3000"
     environment:
@@ -54,19 +81,42 @@ services:
           target: /app/public
         - action: rebuild
           path: ./frontend/package.json
+    networks:
+      - communityboard-dev
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
 
   etl:
-    build: ./data-engineering
+    build:
+      context: ./data-engineering
+      dockerfile: Dockerfile
+    container_name: communityboard-etl-dev
+    restart: on-failure
     environment:
       DB_HOST: postgres
       DB_PORT: "5432"
-      DB_NAME: communityboard
-      DB_USER: postgres
-      DB_PASSWORD: postgres
+      DB_NAME: ${DB_NAME:-communityboard}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-dev_password_change_me}
+      PYTHONUNBUFFERED: "1"
     depends_on:
       postgres:
         condition: service_healthy
-    profiles: ["analytics"]
+    networks:
+      - communityboard-dev
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
 
 volumes:
-  pgdata:
+  pgdata-dev:
+    driver: local
+
+networks:
+  communityboard-dev:
+    driver: bridge

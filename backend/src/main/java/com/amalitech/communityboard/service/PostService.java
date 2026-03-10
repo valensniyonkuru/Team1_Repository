@@ -1,18 +1,11 @@
 package com.amalitech.communityboard.service;
 
 import com.amalitech.communityboard.dto.*;
-import com.amalitech.communityboard.exception.ForbiddenException;
-import com.amalitech.communityboard.exception.NotFoundException;
 import com.amalitech.communityboard.model.*;
 import com.amalitech.communityboard.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
-
-import jakarta.persistence.criteria.JoinType;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Service
@@ -31,7 +24,7 @@ public class PostService {
 
     public PostResponse getPostById(Long id) {
         Post post = postRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Post not found"));
+                .orElseThrow(() -> new RuntimeException("Post not found"));
         return toResponse(post);
     }
 
@@ -52,9 +45,9 @@ public class PostService {
 
     public PostResponse updatePost(Long id, PostRequest request, User author) {
         Post post = postRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Post not found"));
+                .orElseThrow(() -> new RuntimeException("Post not found"));
         if (!post.getAuthor().getId().equals(author.getId())) {
-            throw new ForbiddenException("Not authorized to update this post");
+            throw new RuntimeException("Not authorized to update this post");
         }
         post.setTitle(request.getTitle());
         post.setContent(request.getContent());
@@ -68,52 +61,16 @@ public class PostService {
 
     public void deletePost(Long id, User author) {
         Post post = postRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Post not found"));
+                .orElseThrow(() -> new RuntimeException("Post not found"));
         if (!post.getAuthor().getId().equals(author.getId())
                 && !author.getRole().name().equals("ADMIN")) {
-            throw new ForbiddenException("Not authorized to delete this post");
+            throw new RuntimeException("Not authorized to delete this post");
         }
         postRepository.delete(post);
     }
 
-    public Page<PostResponse> searchPosts(
-            String keyword,
-            Long categoryId,
-            LocalDate startDate,
-            LocalDate endDate,
-            int page,
-            int size
-    ) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-
-        Specification<Post> spec = Specification.where(null);
-
-        if (StringUtils.hasText(keyword)) {
-            String like = "%" + keyword.toLowerCase() + "%";
-            spec = spec.and((root, query, cb) -> cb.or(
-                    cb.like(cb.lower(root.get("title")), like),
-                    cb.like(cb.lower(root.get("content")), like)
-            ));
-        }
-
-        if (categoryId != null) {
-            spec = spec.and((root, query, cb) ->
-                    cb.equal(root.join("category", JoinType.LEFT).get("id"), categoryId)
-            );
-        }
-
-        if (startDate != null) {
-            LocalDateTime start = startDate.atStartOfDay();
-            spec = spec.and((root, query, cb) -> cb.greaterThanOrEqualTo(root.get("createdAt"), start));
-        }
-
-        if (endDate != null) {
-            LocalDateTime endExclusive = endDate.plusDays(1).atStartOfDay();
-            spec = spec.and((root, query, cb) -> cb.lessThan(root.get("createdAt"), endExclusive));
-        }
-
-        return postRepository.findAll(spec, pageable).map(this::toResponse);
-    }
+    // TODO: Implement search functionality
+    // public Page<PostResponse> searchPosts(String query, Pageable pageable) { ... }
 
     private PostResponse toResponse(Post post) {
         return PostResponse.builder()
