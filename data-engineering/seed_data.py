@@ -45,7 +45,7 @@ def require_categories(conn: Connection) -> List[int]:
     rows = conn.execute(text("SELECT id FROM categories ORDER BY id;")).fetchall()
     ids = [r[0] for r in rows]
     if not ids:
-        raise RuntimeError("No categories found. Start backend so it seeds categories via data.sql.")
+        raise RuntimeError("No categories found. Start backend so it seeds categories")
     return ids
 
 
@@ -92,39 +92,108 @@ def upsert_users(conn: Connection, n_users: int) -> List[int]:
 
 
 def insert_posts(conn: Connection, user_ids: List[int], category_ids: List[int], n_posts: int) -> List[int]:
-    """Insert posts linked to existing users and categories, with at least 10 posts per category. Returns post IDs."""
+    """Insert posts with category-specific keywords and a date range spanning 3+ months."""
+    category_rows = conn.execute(text("SELECT id, name FROM categories ORDER BY id;")).fetchall()
+    category_map = {row[0]: row[1].upper() for row in category_rows}
+
+    category_templates = {
+        "NEWS": {
+            "title_keywords": ["NEWS community announcement", "NEWS neighborhood update",
+                "NEWS public notice", "NEWS local bulletin", "NEWS service update",
+            ],
+            "body_templates": [
+                "This NEWS update shares an important community announcement for all residents.",
+                "Please read this NEWS public notice regarding a recent neighborhood update.",
+                "This NEWS bulletin provides local information and community updates.",
+                "Residents are encouraged to attend this training session and public event this weekend.",
+            ],
+        },
+        "EVENT": {
+            "title_keywords": ["EVENT community meetup", "EVENT cleanup campaign",
+                "EVENT workshop announcement", "EVENT volunteer session", "EVENT sports gathering",
+            ],
+            "body_templates": [
+                "This EVENT invites residents to join a community meetup and participate actively.",
+                "A new EVENT has been scheduled for the neighborhood and all residents are welcome.",
+                "This EVENT announcement includes meeting details, participation guidance, and schedule information.",
+                "Residents are encouraged to attend this training session and public event this weekend.",
+            ],
+        },
+        "DISCUSSION": {
+            "title_keywords": ["DISCUSSION community ideas", "DISCUSSION resident feedback", "DISCUSSION public debate",
+                "DISCUSSION neighborhood conversation", "DISCUSSION local opinions",
+            ],
+            "body_templates": [
+                "This DISCUSSION post invites residents to share feedback and ideas on a local issue.",
+                "Join the DISCUSSION and contribute your opinion on community priorities.",
+                "This DISCUSSION thread is intended for neighborhood conversation and public feedback.",
+                "This discussion thread is intended to gather local feedback, suggestions, and perspectives.",
+            ],
+        },
+        "ALERT": {
+            "title_keywords": ["ALERT safety warning", "ALERT urgent notice",
+                "ALERT service disruption", "ALERT weather notice", "ALERT security issue",
+            ],
+            "body_templates": [
+                "This ALERT is being issued to inform residents about an urgent community issue.",
+                "Please note this ALERT and follow the safety guidance provided to residents.",
+                "An ALERT has been shared concerning a service disruption affecting the area.",
+                "This emergency notice provides important warning information for the local area.",
+            ],
+        },
+    }
+
     posts = []
-# Guaranteeing at least 10 posts per category
+
+    # Guarantee at least 10 posts per category when possible
+    min_per_category = min(10, n_posts // max(len(category_ids), 1))
+
     for category_id in category_ids:
-        for _ in range(10):
+        category_name = category_map.get(category_id, "NEWS")
+        templates = category_templates.get(category_name, category_templates["NEWS"])
+
+        for _ in range(min_per_category):
             created_at = rand_ts(180)
+            title = RNG.choice(templates["title_keywords"]).title()
+            content = RNG.choice(templates["body_templates"])
+
+            # Add slight variation for better search realism
+            content = f"{content} {fake.sentence(nb_words=8)}"
+
             posts.append(
                 {
-                    "content": fake.paragraph(nb_sentences=3),
+                    "content": content,
                     "created_at": created_at,
-                    "title": fake.sentence(nb_words=6).rstrip("."),
+                    "title": title,
                     "updated_at": created_at + timedelta(hours=RNG.randint(0, 72)),
                     "author_id": RNG.choice(user_ids),
                     "category_id": category_id,
                 }
             )
 
-    # Fill the remaining posts randomly
-    remaining = max(0, n_posts - len(posts))
+    # Fill the remaining posts randomly across categories
+    remaining = n_posts - len(posts)
 
     for _ in range(remaining):
+        category_id = RNG.choice(category_ids)
+        category_name = category_map.get(category_id, "NEWS")
+        templates = category_templates.get(category_name, category_templates["NEWS"])
+
         created_at = rand_ts(180)
+        title = RNG.choice(templates["title_keywords"]).title()
+        content = RNG.choice(templates["body_templates"])
+        content = f"{content} {fake.sentence(nb_words=8)}"
+
         posts.append(
             {
-                "content": fake.paragraph(nb_sentences=3),
+                "content": content,
                 "created_at": created_at,
-                "title": fake.sentence(nb_words=6).rstrip("."),
+                "title": title,
                 "updated_at": created_at + timedelta(hours=RNG.randint(0, 72)),
                 "author_id": RNG.choice(user_ids),
-                "category_id": RNG.choice(category_ids),
+                "category_id": category_id,
             }
         )
-
 
     df = pd.DataFrame(posts)
     df.to_sql("posts", conn, if_exists="append", index=False, method="multi")
