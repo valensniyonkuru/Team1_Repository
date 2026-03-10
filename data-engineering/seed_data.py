@@ -62,50 +62,91 @@ def upsert_users(conn: Connection, n_users: int) -> List[int]:
     users = []
     BCRYPT_PASSWORD = "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy"  # password123
 
+    # Always include known accounts for testing
     fixed_users = [
         {
             "email": "admin@amalitech.com",
             "name": "Admin User",
             "password": BCRYPT_PASSWORD,
             "role": "ADMIN",
+            "auth_provider": "LOCAL",
+            "google_id": None,
+            "email_verified": True,
+            "account_locked": False,
+            "token_version": 0,
+            "deleted_at": None,
             "created_at": rand_ts(180),
+            "updated_at": rand_ts(60),
         },
         {
             "email": "user@amalitech.com",
             "name": "Test User",
             "password": BCRYPT_PASSWORD,
             "role": "USER",
+            "auth_provider": "LOCAL",
+            "google_id": None,
+            "email_verified": True,
+            "account_locked": False,
+            "token_version": 0,
+            "deleted_at": None,
             "created_at": rand_ts(180),
+            "updated_at": rand_ts(60),
         },
     ]
 
     users.extend(fixed_users)
 
     remaining = max(0, n_users - len(fixed_users))
+
     for _ in range(remaining):
+        created_at = rand_ts(180)
+        updated_at = created_at + timedelta(hours=RNG.randint(1, 48))
+
         users.append(
             {
                 "email": fake.unique.email(),
                 "name": fake.name(),
                 "password": BCRYPT_PASSWORD,
                 "role": "USER",
-                "created_at": rand_ts(180),
+                "auth_provider": "LOCAL",
+                "google_id": None,
+                "email_verified": True,
+                "account_locked": False,
+                "token_version": 0,
+                "deleted_at": None,
+                "created_at": created_at,
+                "updated_at": updated_at,
             }
         )
 
     sql = text("""
-        INSERT INTO users (created_at, email, name, password, role)
-        VALUES (:created_at, :email, :name, :password, :role)
+        INSERT INTO users (
+            email, name, password, role,
+            "authProvider", "googleId", "emailVerified", "accountLocked",
+            "tokenVersion", "deletedAt", "createdAt", "updatedAt"
+        )
+        VALUES (
+            :email, :name, :password, :role,
+            :auth_provider, :google_id, :email_verified, :account_locked,
+            :token_version, :deleted_at, :created_at, :updated_at
+        )
         ON CONFLICT (email) DO UPDATE SET
             name = EXCLUDED.name,
             password = EXCLUDED.password,
-            role = EXCLUDED.role
+            role = EXCLUDED.role,
+            "authProvider" = EXCLUDED."authProvider",
+            "googleId" = EXCLUDED."googleId",
+            "emailVerified" = EXCLUDED."emailVerified",
+            "accountLocked" = EXCLUDED."accountLocked",
+            "tokenVersion" = EXCLUDED."tokenVersion",
+            "deletedAt" = EXCLUDED."deletedAt",
+            "updatedAt" = EXCLUDED."updatedAt"
     """)
 
     for row in users:
         conn.execute(sql, row)
 
-    ids = [r[0] for r in conn.execute(text("SELECT id FROM users ORDER BY id;")).fetchall()]
+    ids = [r[0] for r in conn.execute(text('SELECT id FROM users ORDER BY id;')).fetchall()]
     return ids
 
 def insert_posts(conn: Connection, user_ids: List[int], category_ids: List[int], n_posts: int) -> List[int]:
