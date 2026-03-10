@@ -12,27 +12,43 @@ const Home = () => {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <p style={{ marginTop: 30 }}>Loading posts...</p>;
+  if (loading) {
+    return (
+      <div className="mt-8 flex items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        <span className="ml-3 text-muted">Loading posts...</span>
+      </div>
+    );
+  }
 
   return (
-    <div style={{ marginTop: 30 }}>
-      <h1>Recent Posts</h1>
+    <div className="mt-8">
+      <h1 className="mb-6 text-3xl font-bold">Recent Posts</h1>
       {posts.length === 0 ? (
-        <p>No posts yet. Be the first to post!</p>
+        <p className="text-muted">No posts yet. Be the first to post!</p>
       ) : (
-        posts.map((post) => (
-          <div key={post.id} className="card">
-            <h2>{post.title}</h2>
-            <p style={{ color: "#636e72", fontSize: 13 }}>
-              by {post.authorName} • {new Date(post.createdAt).toLocaleDateString()}
-              {post.categoryName && ` • ${post.categoryName}`}
-            </p>
-            <p style={{ marginTop: 10 }}>{post.content}</p>
-            <p style={{ marginTop: 8, color: "#0984e3", fontSize: 13 }}>
-              {post.commentCount} comments
-            </p>
-          </div>
-        ))
+        <div className="space-y-4">
+          {posts.map((post) => (
+            <article
+              key={post.id}
+              className="rounded-lg bg-white p-6 shadow-sm transition-shadow hover:shadow-md"
+            >
+              <h2 className="text-xl font-semibold">{post.title}</h2>
+              <p className="mt-1 text-xs text-muted">
+                by {post.authorName} &bull; {new Date(post.createdAt).toLocaleDateString()}
+                {post.categoryName && (
+                  <span className="ml-2 inline-block rounded-full bg-primary/10 px-2 py-0.5 text-primary">
+                    {post.categoryName}
+                  </span>
+                )}
+              </p>
+              <p className="mt-3 leading-relaxed text-ink/80">{post.content}</p>
+              <p className="mt-3 text-xs font-medium text-primary">
+                {post.commentCount} comments
+              </p>
+            </article>
+          ))}
+        </div>
       )}
     </div>
   );
