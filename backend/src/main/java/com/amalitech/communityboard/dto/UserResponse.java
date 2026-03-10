@@ -1,15 +1,16 @@
 package com.amalitech.communityboard.dto;
 
 import lombok.*;
+import java.time.LocalDateTime;
 
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
-public class AuthResponse {
+public class UserResponse {
 
-    private String accessToken;
-    private String refreshToken;
-    private long expiresIn;
+    private Long id;
     private String email;
     private String name;
     private String role;
+    private String authProvider;
     private boolean emailVerified;
+    private LocalDateTime createdAt;
 }
