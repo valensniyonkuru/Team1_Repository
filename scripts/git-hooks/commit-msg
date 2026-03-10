@@ -1,0 +1,11 @@
+#!/bin/bash
+# commit-msg: strip Cursor attribution trailer so it is not added to commits
+
+MSG_FILE="$1"
+[ -z "$MSG_FILE" ] || [ ! -f "$MSG_FILE" ] && exit 0
+
+# Remove "Made-with: Cursor" line (case-insensitive)
+TMP="${MSG_FILE}.strip"
+grep -v -i -E '^[[:space:]]*Made-with:[[:space:]]*Cursor[[:space:]]*$' "$MSG_FILE" > "$TMP" && mv "$TMP" "$MSG_FILE"
+rm -f "$TMP" 2>/dev/null || true
+exit 0
