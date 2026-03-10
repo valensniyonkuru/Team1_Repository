@@ -14,5 +14,5 @@ public class PostResponse {
     private String authorEmail;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    private int commentCount;
+    private Long commentCount;
 }
