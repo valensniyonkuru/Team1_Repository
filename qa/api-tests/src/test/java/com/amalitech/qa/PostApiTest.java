@@ -13,17 +13,25 @@ public class PostApiTest {
     @BeforeClass
     public void setup() {
         RestAssured.baseURI = "http://localhost:8080";
-        // Login to get token using seeded admin
+
+        // Register a user just for this test
+        given()
+            .contentType(ContentType.JSON)
+            .body("{\"name\":\"Post Tester\",\"email\":\"posttester@test.com\",\"password\":\"Test@1234\"}")
+        .when()
+            .post("/api/auth/register");
+
+        // Login to get token
         var response = given()
             .contentType(ContentType.JSON)
-            .body("{\"email\":\"admin@amalitech.com\",\"password\":\"password123\"}")
+            .body("{\"email\":\"posttester@test.com\",\"password\":\"Test@1234\"}")
         .when()
             .post("/api/auth/login")
         .then()
             .statusCode(200)
             .extract();
             
-        authToken = response.path("token");
+        authToken = response.path("data.accessToken");
     }
 
     @Test

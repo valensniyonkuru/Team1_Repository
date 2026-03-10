@@ -17,26 +17,26 @@ public class AuthApiTest {
     public void testRegisterNewUser() {
         given()
             .contentType(ContentType.JSON)
-            .body("{\"name\":\"QA Tester\",\"email\":\"qa@test.com\",\"password\":\"test1234\"}")
+            .body("{\"name\":\"QA Tester\",\"email\":\"qa@test.com\",\"password\":\"Test@1234\"}")
         .when()
             .post("/api/auth/register")
         .then()
-            .statusCode(200)
-            .body("token", notNullValue())
-            .body("email", equalTo("qa@test.com"));
+            .statusCode(201)
+            .body("data.accessToken", notNullValue())
+            .body("data.email", equalTo("qa@test.com"));
     }
 
     @Test(priority = 2)
     public void testLoginExistingUser() {
         given()
             .contentType(ContentType.JSON)
-            .body("{\"email\":\"admin@amalitech.com\",\"password\":\"password123\"}")
+            .body("{\"email\":\"qa@test.com\",\"password\":\"Test@1234\"}")
         .when()
             .post("/api/auth/login")
         .then()
             .statusCode(200)
-            .body("token", notNullValue())
-            .body("role", equalTo("ADMIN"));
+            .body("data.accessToken", notNullValue())
+            .body("data.role", equalTo("USER"));
     }
 
     @Test(priority = 3)
