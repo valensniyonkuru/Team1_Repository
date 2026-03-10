@@ -1,11 +1,13 @@
 import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { authAPI } from "../services/api";
 import { useAuth } from "../context/AuthContext";
+import LoginForm from "../components/LoginForm";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -14,14 +16,15 @@ const Login = () => {
     e.preventDefault();
     try {
       const res = await authAPI.login({ email, password });
-      
+
       const payload = res.data.data || res.data;
       const token = payload.accessToken || payload.token;
+      const refreshToken = payload.refreshToken;
 
-      login({ name: payload.name, email: payload.email, role: payload.role }, token);
+      login({ name: payload.name, email: payload.email, role: payload.role }, token, refreshToken);
       navigate("/");
     } catch (err) {
-      if (err.response && err.response.data && err.response.data.message) {
+      if (err.response?.data?.message) {
         setError(err.response.data.message);
       } else {
         setError("Invalid email or password");
@@ -30,40 +33,33 @@ const Login = () => {
   };
 
   return (
-    <div className="mx-auto mt-16 w-full max-w-md">
-      <div className="rounded-lg bg-white p-8 shadow-sm">
-        <h1 className="mb-6 text-2xl font-bold">Login</h1>
-        {error && (
-          <p className="mb-4 rounded-md bg-red-50 px-4 py-2 text-sm text-red-600">{error}</p>
-        )}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            className="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+    <div className="flex min-h-[calc(100vh-64px)] items-center justify-center bg-ping-bg px-0 sm:px-6">
+      <div className="w-full max-w-[428px] rounded-none sm:rounded-3xl sm:border border-ping-stroke px-6 sm:px-8 py-6">
+        <div className="flex flex-col items-center gap-12">
+          {/* Logo + Header */}
+          <div className="flex flex-col items-center gap-8">
+            <img src="/assets/Logo.svg" alt="Ping" className="h-[38px] w-[100px]" />
+            <div className="flex flex-col items-center text-center leading-normal">
+              <h1 className="font-poppins text-[32px] font-semibold text-ping-heading">
+                Welcome back
+              </h1>
+              <p className="font-inter text-base font-medium text-ping-body">
+                Sign in to your neighborhood community
+              </p>
+            </div>
+          </div>
+
+          {/* Form */}
+          <LoginForm
+            email={email}
+            password={password}
+            setEmail={setEmail}
+            setPassword={setPassword}
+            error={error}
+            setError={setError}
+            handleSubmit={handleSubmit}
           />
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            className="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-          />
-          <button
-            type="submit"
-            className="w-full rounded-md bg-primary py-2.5 font-medium text-white transition-colors hover:bg-primary-hover"
-          >
-            Login
-          </button>
-        </form>
-        <p className="mt-6 text-center text-sm text-muted">
-          Don't have an account?{" "}
-          <Link to="/register" className="font-medium text-primary hover:underline">Register</Link>
-        </p>
+        </div>
       </div>
     </div>
   );
