@@ -30,7 +30,7 @@ N_COMMENTS = int(os.getenv("N_COMMENTS", "240"))
 engine = create_engine(DATABASE_URL)
 
 
-def rand_ts(days_back: int = 30) -> datetime:
+def rand_ts(days_back: int = 120) -> datetime:
     """Return a random UTC timestamp in the last `days_back` days."""
     now = datetime.utcnow()
     return now - timedelta(
@@ -95,7 +95,7 @@ def insert_posts(conn: Connection, user_ids: List[int], category_ids: List[int],
     """Insert posts linked to existing users and categories; returns post IDs."""
     posts = []
     for _ in range(n_posts):
-        created_at = rand_ts(30)
+        created_at = rand_ts(180)
         posts.append(
             {
                 "content": fake.paragraph(nb_sentences=3),
@@ -121,7 +121,7 @@ def insert_comments(conn: Connection, user_ids: List[int], post_ids: List[int], 
         comments.append(
             {
                 "content": fake.sentence(nb_words=10).rstrip("."),
-                "created_at": rand_ts(30),
+                "created_at": rand_ts(40),
                 "author_id": RNG.choice(user_ids),
                 "post_id": RNG.choice(post_ids),
             }
