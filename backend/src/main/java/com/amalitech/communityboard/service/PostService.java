@@ -5,6 +5,7 @@ import com.amalitech.communityboard.model.*;
 import com.amalitech.communityboard.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 
@@ -43,6 +44,7 @@ public class PostService {
         return toResponse(postRepository.save(post));
     }
 
+    @PreAuthorize("hasRole('ADMIN') or #author.id == principal.id ")
     public PostResponse updatePost(Long id, PostRequest request, User author) {
         Post post = postRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Post not found"));
