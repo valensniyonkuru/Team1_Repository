@@ -4,20 +4,43 @@ spring:
     username: ${SPRING_DATASOURCE_USERNAME:postgres}
     password: ${SPRING_DATASOURCE_PASSWORD:postgres}
   jpa:
-    defer-datasource-initialization: true
     hibernate:
       ddl-auto: update
     show-sql: false
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
+    defer-datasource-initialization: true
   sql:
     init:
-      mode: never
+      mode: always
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
 
 jwt:
-  secret: ${JWT_SECRET:communityboard-secret-key-amalitech-2024}
-  expiration: 86400000
+  access-token:
+    secret: ${JWT_ACCESS_SECRET:communityboard-secret-key-amalitech-2024}
+    expiration: 900000
+  refresh-token:
+    secret: ${JWT_REFRESH_SECRET:communityboard-secret-key-amalitech-2024}
+    expiration: 604800000
+
+app:
+  frontend-url: ${FRONTEND_URL:http://localhost:3000}
 
 server:
   port: 8080
