@@ -92,9 +92,27 @@ def upsert_users(conn: Connection, n_users: int) -> List[int]:
 
 
 def insert_posts(conn: Connection, user_ids: List[int], category_ids: List[int], n_posts: int) -> List[int]:
-    """Insert posts linked to existing users and categories; returns post IDs."""
+    """Insert posts linked to existing users and categories, with at least 10 posts per category. Returns post IDs."""
     posts = []
-    for _ in range(n_posts):
+# Guaranteeing at least 10 posts per category
+    for category_id in category_ids:
+        for _ in range(10):
+            created_at = rand_ts(180)
+            posts.append(
+                {
+                    "content": fake.paragraph(nb_sentences=3),
+                    "created_at": created_at,
+                    "title": fake.sentence(nb_words=6).rstrip("."),
+                    "updated_at": created_at + timedelta(hours=RNG.randint(0, 72)),
+                    "author_id": RNG.choice(user_ids),
+                    "category_id": category_id,
+                }
+            )
+
+    # Fill the remaining posts randomly
+    remaining = max(0, n_posts - len(posts))
+
+    for _ in range(remaining):
         created_at = rand_ts(180)
         posts.append(
             {
@@ -106,6 +124,7 @@ def insert_posts(conn: Connection, user_ids: List[int], category_ids: List[int],
                 "category_id": RNG.choice(category_ids),
             }
         )
+
 
     df = pd.DataFrame(posts)
     df.to_sql("posts", conn, if_exists="append", index=False, method="multi")
