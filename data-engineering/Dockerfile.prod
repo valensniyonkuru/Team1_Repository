@@ -1,56 +1,52 @@
-# Multi-stage build for Python ETL pipeline
-# Stage 1: Build
+# Production Dockerfile for Python ETL/Data Engineering service
+# Built from repository root context: docker build -f data-engineering/Dockerfile.prod .
+
+# Stage 1: Install Python dependencies
 FROM python:3.11-slim AS builder
 
 WORKDIR /build
 
-# Install system dependencies
+# Install build dependencies (needed for native packages if any)
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    gcc \
-    && rm -rf /var/lib/apt/lists/*
+    apt-get install -y --no-install-recommends gcc libpq-dev && \
+    rm -rf /var/lib/apt/lists/*
 
-# Copy requirements
+# Copy and install Python dependencies into user-local space
 COPY data-engineering/requirements.txt ./
-
-# Install Python dependencies
 RUN pip install --user --no-cache-dir -r requirements.txt
 
 # Stage 2: Runtime
 FROM python:3.11-slim
 
-# Install security updates
+# Apply security updates only (no extra packages needed; psycopg2-binary is self-contained)
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install -y --no-install-recommends \
-    postgresql-client \
-    && rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/*
 
 # Create non-root user
 RUN useradd -m -u 1000 appuser
 
-# Set working directory
 WORKDIR /app
 
-# Copy Python dependencies from builder
+# Copy Python packages installed in builder stage
 COPY --from=builder /root/.local /home/appuser/.local
 
 # Copy application code
 COPY data-engineering/ .
 
-# Change ownership
+# Set ownership
 RUN chown -R appuser:appuser /app
 
-# Switch to non-root user
 USER appuser
 
-# Add local Python packages to PATH
 ENV PATH=/home/appuser/.local/bin:$PATH \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
 
-# Health check (optional, for monitoring)
+# Health check: verify Python environment and that required modules are importable
+# The ETL pipeline may run and exit - this check validates the environment is ready
 HEALTHCHECK --interval=60s --timeout=10s --start-period=20s --retries=3 \
-    CMD python -c "import sys; print('ETL service running')" || exit 1
+    CMD python -c "import pandas, sqlalchemy, psycopg2; print('ETL environment OK')" || exit 1
 
 # Run ETL pipeline
 CMD ["python", "etl_pipeline.py"]
