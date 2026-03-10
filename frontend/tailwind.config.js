@@ -25,6 +25,18 @@ module.exports = {
         "ping-error-text": "#c81e1e",
         "ping-badge-bg": "#b2bcc2",
         "ping-badge-stroke": "#395362",
+        "ping-badge-purple-bg": "#edebfe",
+        "ping-badge-purple-border": "#ac94fa",
+        "ping-badge-purple-text": "#5521b5",
+        "ping-badge-red-bg": "#fde8e8",
+        "ping-badge-red-border": "#f98080",
+        "ping-badge-red-text": "#9b1c1c",
+        "ping-badge-green-bg": "#def7ec",
+        "ping-badge-green-border": "#31c48d",
+        "ping-badge-green-text": "#03543f",
+        "ping-badge-yellow-bg": "#ffebb0",
+        "ping-badge-yellow-border": "#fecb33",
+        "ping-badge-yellow-text": "#8c6900",
       },
       fontFamily: {
         poppins: ["Poppins", "sans-serif"],
@@ -34,4 +46,3 @@ module.exports = {
   },
   plugins: [],
 };
-

@@ -20,7 +20,11 @@ services:
     networks:
       - communityboard-dev
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-communityboard}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-communityboard}",
+        ]
       interval: 5s
       timeout: 5s
       retries: 20
@@ -47,7 +51,7 @@ services:
       SERVER_PORT: 8080
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      
+
     ports:
       - "8080:8080"
     depends_on:
@@ -114,6 +118,8 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:-dev_password_change_me}
       PYTHONUNBUFFERED: "1"
     depends_on:
+      backend:
+        condition: service_started
       postgres:
         condition: service_healthy
     networks:

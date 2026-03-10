@@ -76,9 +76,10 @@ def upsert_users(conn: Connection, n_users: int) -> List[int]:
         )
 
     # UPSERT row-by-row for correctness (email is unique); n_users is small.
+    # Note: added id, account_locked, auth_provider, email_verified, token_version for proper Hibernate mapping
     sql = text("""
-        INSERT INTO users (created_at, email, name, password, role)
-        VALUES (:created_at, :email, :name, :password, :role)
+        INSERT INTO users (id, created_at, email, name, password, role, account_locked, auth_provider, email_verified, token_version)
+        VALUES (nextval('users_seq'), :created_at, :email, :name, :password, :role, false, 'MANUAL', true, 0)
         ON CONFLICT (email) DO UPDATE SET
             name = EXCLUDED.name,
             role = EXCLUDED.role
@@ -95,10 +96,16 @@ def upsert_users(conn: Connection, n_users: int) -> List[int]:
 def insert_posts(conn: Connection, user_ids: List[int], category_ids: List[int], n_posts: int) -> List[int]:
     """Insert posts linked to existing users and categories; returns post IDs."""
     posts = []
-    for _ in range(n_posts):
+    
+    # Pre-fetch sequences to satisfy Hibernate ID schema mapping
+    seq_records = conn.execute(text(f"SELECT nextval('posts_seq') FROM generate_series(1, {n_posts})")).fetchall()
+    post_ids = [r[0] for r in seq_records]
+
+    for i in range(n_posts):
         created_at = rand_ts(30)
         posts.append(
             {
+                "id": post_ids[i],
                 "content": fake.paragraph(nb_sentences=3),
                 "created_at": created_at,
                 "title": fake.sentence(nb_words=6).rstrip("."),
@@ -111,16 +118,21 @@ def insert_posts(conn: Connection, user_ids: List[int], category_ids: List[int],
     df = pd.DataFrame(posts)
     df.to_sql("posts", conn, if_exists="append", index=False, method="multi")
 
-    post_ids = [r[0] for r in conn.execute(text("SELECT id FROM posts ORDER BY id;")).fetchall()]
     return post_ids
 
 
 def insert_comments(conn: Connection, user_ids: List[int], post_ids: List[int], n_comments: int) -> None:
     """Insert comments linked to existing posts and users."""
     comments = []
-    for _ in range(n_comments):
+    
+    # Pre-fetch sequences
+    seq_records = conn.execute(text(f"SELECT nextval('comments_seq') FROM generate_series(1, {n_comments})")).fetchall()
+    comment_ids = [r[0] for r in seq_records]
+
+    for i in range(n_comments):
         comments.append(
             {
+                "id": comment_ids[i],
                 "content": fake.sentence(nb_words=10).rstrip("."),
                 "created_at": rand_ts(30),
                 "author_id": RNG.choice(user_ids),
