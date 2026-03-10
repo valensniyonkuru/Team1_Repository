@@ -2,33 +2,101 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
+const ChartIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#061c2a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M18 20V10M12 20V4M6 20v-6" />
+  </svg>
+);
+
+const LogOutIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#c81e1e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+    <polyline points="16 17 21 12 16 7" />
+    <line x1="21" x2="9" y1="12" y2="12" />
+  </svg>
+);
+
+const PenIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#061c2a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+  </svg>
+);
+
 const Navbar = () => {
   const { user, logout } = useAuth();
 
+  const getInitials = (name) => {
+    if (!name) return "US";
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .substring(0, 2);
+  };
+
   return (
-    <nav className="flex items-center justify-between bg-ink px-8 py-4 text-white shadow-md">
-      <Link to="/" className="text-xl font-bold tracking-tight hover:text-primary transition-colors">
-        CommunityBoard
+    <nav className="flex items-center justify-between border-b border-ping-stroke bg-white px-6 py-2.5 sm:px-12 lg:px-[120px]">
+      <Link to="/" className="shrink-0 transition-opacity hover:opacity-90">
+        <img src="/assets/Logo.svg" alt="Ping Logo" className="h-[38px] w-[100px]" />
       </Link>
-      <div className="flex items-center gap-5 text-sm">
-        <Link to="/" className="hover:text-primary transition-colors">Home</Link>
+
+      <div className="flex items-center gap-5">
         {user ? (
           <>
-            <Link to="/create-post" className="rounded-md bg-primary px-4 py-2 font-medium hover:bg-primary-hover transition-colors">
-              New Post
-            </Link>
-            <span className="text-gray-300">Hi, {user.name}</span>
+            <div className="hidden sm:flex items-center gap-5">
+              <Link
+                to="/"
+                className="flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 transition-colors hover:bg-gray-100"
+              >
+                <ChartIcon />
+                <span className="font-inter text-sm font-medium text-[#061c2a]">Analytics</span>
+              </Link>
+              <Link
+                to="/create-post"
+                className="flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 transition-colors hover:bg-gray-100"
+              >
+                <PenIcon />
+                <span className="font-inter text-sm font-medium text-[#061c2a]">New Post</span>
+              </Link>
+            </div>
+
+            <div className="hidden items-center gap-2.5 sm:flex">
+              <div className="flex size-8 shrink-0 flex-col items-center justify-center rounded-full bg-[#c3c3c2]">
+                <span className="font-inter text-xs font-medium text-[#222220]">
+                  {getInitials(user.name)}
+                </span>
+              </div>
+              <div className="flex flex-col items-start whitespace-nowrap">
+                <span className="font-inter text-sm font-semibold leading-[14px] text-ping-body-primary">
+                  {user.name}
+                </span>
+                <span className="font-inter text-xs font-normal leading-[12px] text-ping-body">
+                  {user.email}
+                </span>
+              </div>
+            </div>
+
             <button
               onClick={logout}
-              className="rounded-md border border-gray-500 px-3 py-1.5 text-gray-300 hover:border-white hover:text-white transition-colors"
+              className="flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 transition-colors hover:bg-ping-error-bg sm:px-5"
             >
-              Logout
+              <LogOutIcon />
+              <span className="font-inter text-sm font-medium text-ping-error-text">Log out</span>
             </button>
           </>
         ) : (
           <>
-            <Link to="/login" className="hover:text-primary transition-colors">Login</Link>
-            <Link to="/register" className="rounded-md bg-primary px-4 py-2 font-medium hover:bg-primary-hover transition-colors">
+            <Link
+              to="/login"
+              className="font-inter text-sm font-medium text-ping-body transition-colors hover:text-ping-dark"
+            >
+              Log In
+            </Link>
+            <Link
+              to="/register"
+              className="rounded-lg bg-ping-dark px-5 py-2.5 font-inter text-sm font-medium text-white transition-colors hover:bg-ping-dark/90"
+            >
               Register
             </Link>
           </>

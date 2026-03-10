@@ -32,8 +32,8 @@ const CreatePost = () => {
   };
 
   return (
-    <div className="mx-auto mt-16 w-full max-w-2xl">
-      <div className="rounded-lg bg-white p-8 shadow-sm">
+    <div className="mx-auto mt-16 w-full max-w-2xl px-6">
+      <div className="rounded-lg bg-white p-8 shadow-sm border border-ping-stroke">
         <h1 className="mb-6 text-2xl font-bold">Create New Post</h1>
         {error && (
           <p className="mb-4 rounded-md bg-red-50 px-4 py-2 text-sm text-red-600">{error}</p>
