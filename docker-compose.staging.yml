@@ -1,4 +1,7 @@
-version: "3.8"
+# docker-compose.staging.yml — Staging Environment (develop branch)
+# Usage: docker compose -f docker-compose.staging.yml up -d
+# Requires: .env file populated from .env.develop (copy and fill real values)
+# Required env vars: DB_PASSWORD, JWT_SECRET, DOCKER_REGISTRY, DOCKER_NAMESPACE, REACT_APP_API_URL
 
 services:
   postgres:
@@ -8,18 +11,18 @@ services:
     environment:
       POSTGRES_DB: ${DB_NAME:-communityboard}
       POSTGRES_USER: ${DB_USER:-postgres}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
-    ports:
-      - "5432:5432"
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    # No host port exposure — database is internal only
     volumes:
       - pgdata-staging:/var/lib/postgresql/data
+    networks:
+      - communityboard-staging
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-communityboard}"]
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - communityboard-staging
+      start_period: 15s
     logging:
       driver: "json-file"
       options:
@@ -36,11 +39,12 @@ services:
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${DB_NAME:-communityboard}
       SPRING_DATASOURCE_USERNAME: ${DB_USER:-postgres}
-      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-postgres}
-      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
-      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
-      SERVER_PORT: 8080
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      # update: allow schema evolution in staging (not validate)
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES:-staging}
+      JWT_SECRET: ${JWT_SECRET}
+      SERVER_PORT: 8080
     ports:
       - "8080:8080"
     depends_on:
@@ -48,23 +52,27 @@ services:
         condition: service_healthy
     networks:
       - communityboard-staging
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
+      start_period: 60s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   frontend:
     image: ${DOCKER_REGISTRY}/${DOCKER_NAMESPACE}/communityboard-frontend:staging
     build:
       context: .
       dockerfile: frontend/Dockerfile.prod
+      args:
+        # REACT_APP_API_URL is baked into the JS bundle at BUILD TIME (CRA limitation)
+        # This arg applies when using `docker compose --build`; in CI pass via --build-arg
+        REACT_APP_API_URL: ${REACT_APP_API_URL}
     container_name: communityboard-frontend-staging
     restart: always
     ports:
@@ -73,8 +81,12 @@ services:
       - backend
     networks:
       - communityboard-staging
-    environment:
-      REACT_APP_API_URL: ${REACT_APP_API_URL:-http://localhost:8080}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     logging:
       driver: "json-file"
       options:
@@ -87,13 +99,16 @@ services:
       context: .
       dockerfile: data-engineering/Dockerfile.prod
     container_name: communityboard-etl-staging
-    restart: always
+    # on-failure: restart if the ETL script exits with an error
+    # Change to 'always' to re-run the pipeline continuously (periodic job behaviour)
+    restart: on-failure
     environment:
       DB_HOST: postgres
       DB_PORT: "5432"
       DB_NAME: ${DB_NAME:-communityboard}
       DB_USER: ${DB_USER:-postgres}
-      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD}
+      PYTHONUNBUFFERED: "1"
     depends_on:
       postgres:
         condition: service_healthy
