@@ -106,30 +106,17 @@ def upsert_users(conn: Connection, n_users: int) -> List[int]:
             {
                 "email": fake.unique.email(),
                 "name": fake.name(),
-                "password": BCRYPT_PASSWORD,
-                "role": "USER",
-                "auth_provider": "LOCAL",
-                "google_id": None,
-                "email_verified": True,
-                "account_locked": False,
-                "token_version": 0,
-                "deleted_at": None,
-                "created_at": created_at,
-                "updated_at": updated_at,
+                # This is NOT for app login (backend expects hashed passwords on registration).
+                "password": "seeded_password_not_for_login",
+                "role": role,
             }
         )
 
+    # UPSERT row-by-row for correctness (email is unique); n_users is small.
+    # Note: added id, account_locked, auth_provider, email_verified, token_version for proper Hibernate mapping
     sql = text("""
-        INSERT INTO users (
-            email, name, password, role,
-            "authProvider", "googleId", "emailVerified", "accountLocked",
-            "tokenVersion", "deletedAt", "createdAt", "updatedAt"
-        )
-        VALUES (
-            :email, :name, :password, :role,
-            :auth_provider, :google_id, :email_verified, :account_locked,
-            :token_version, :deleted_at, :created_at, :updated_at
-        )
+        INSERT INTO users (id, created_at, email, name, password, role, account_locked, auth_provider, email_verified, token_version)
+        VALUES (nextval('users_seq'), :created_at, :email, :name, :password, :role, false, 'MANUAL', true, 0)
         ON CONFLICT (email) DO UPDATE SET
             name = EXCLUDED.name,
             password = EXCLUDED.password,
@@ -202,49 +189,17 @@ def insert_posts(conn: Connection, user_ids: List[int], category_ids: List[int],
     }
 
     posts = []
+    
+    # Pre-fetch sequences to satisfy Hibernate ID schema mapping
+    seq_records = conn.execute(text(f"SELECT nextval('posts_seq') FROM generate_series(1, {n_posts})")).fetchall()
+    post_ids = [r[0] for r in seq_records]
 
-    # Guarantee at least 10 posts per category when possible
-    min_per_category = min(10, n_posts // max(len(category_ids), 1))
-
-    for category_id in category_ids:
-        category_name = category_map.get(category_id, "NEWS")
-        templates = category_templates.get(category_name, category_templates["NEWS"])
-
-        for _ in range(min_per_category):
-            created_at = rand_ts(180)
-            title = RNG.choice(templates["title_keywords"]).title()
-            content = RNG.choice(templates["body_templates"])
-
-            # Add slight variation for better search realism
-            content = f"{content} {fake.sentence(nb_words=8)}"
-
-            posts.append(
-                {
-                    "content": content,
-                    "created_at": created_at,
-                    "title": title,
-                    "updated_at": created_at + timedelta(hours=RNG.randint(0, 72)),
-                    "author_id": RNG.choice(user_ids),
-                    "category_id": category_id,
-                }
-            )
-
-    # Fill the remaining posts randomly across categories
-    remaining = n_posts - len(posts)
-
-    for _ in range(remaining):
-        category_id = RNG.choice(category_ids)
-        category_name = category_map.get(category_id, "NEWS")
-        templates = category_templates.get(category_name, category_templates["NEWS"])
-
-        created_at = rand_ts(180)
-        title = RNG.choice(templates["title_keywords"]).title()
-        content = RNG.choice(templates["body_templates"])
-        content = f"{content} {fake.sentence(nb_words=8)}"
-
+    for i in range(n_posts):
+        created_at = rand_ts(30)
         posts.append(
             {
-                "content": content,
+                "id": post_ids[i],
+                "content": fake.paragraph(nb_sentences=3),
                 "created_at": created_at,
                 "title": title,
                 "updated_at": created_at + timedelta(hours=RNG.randint(0, 72)),
@@ -256,16 +211,21 @@ def insert_posts(conn: Connection, user_ids: List[int], category_ids: List[int],
     df = pd.DataFrame(posts)
     df.to_sql("posts", conn, if_exists="append", index=False, method="multi")
 
-    post_ids = [r[0] for r in conn.execute(text("SELECT id FROM posts ORDER BY id;")).fetchall()]
     return post_ids
 
 
 def insert_comments(conn: Connection, user_ids: List[int], post_ids: List[int], n_comments: int) -> None:
     """Insert comments linked to existing posts and users."""
     comments = []
-    for _ in range(n_comments):
+    
+    # Pre-fetch sequences
+    seq_records = conn.execute(text(f"SELECT nextval('comments_seq') FROM generate_series(1, {n_comments})")).fetchall()
+    comment_ids = [r[0] for r in seq_records]
+
+    for i in range(n_comments):
         comments.append(
             {
+                "id": comment_ids[i],
                 "content": fake.sentence(nb_words=10).rstrip("."),
                 "created_at": rand_ts(40),
                 "author_id": RNG.choice(user_ids),
