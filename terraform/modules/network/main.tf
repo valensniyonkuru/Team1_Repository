@@ -20,7 +20,7 @@ resource "aws_internet_gateway" "main" {
   }
 }
 
-# Public Subnet
+# Public Subnet — AZ a
 resource "aws_subnet" "public" {
   vpc_id                  = aws_vpc.main.id
   cidr_block              = var.public_subnet_cidr
@@ -28,7 +28,20 @@ resource "aws_subnet" "public" {
   map_public_ip_on_launch = true
 
   tags = {
-    Name        = "${var.environment}-public-subnet"
+    Name        = "${var.environment}-public-subnet-a"
+    Environment = var.environment
+  }
+}
+
+# Public Subnet — AZ b (required by ALB)
+resource "aws_subnet" "public_b" {
+  vpc_id                  = aws_vpc.main.id
+  cidr_block              = var.public_subnet_cidr_b
+  availability_zone       = var.availability_zone_b
+  map_public_ip_on_launch = true
+
+  tags = {
+    Name        = "${var.environment}-public-subnet-b"
     Environment = var.environment
   }
 }
@@ -48,9 +61,15 @@ resource "aws_route_table" "public" {
   }
 }
 
-# Route Table Association
+# Route Table Association — AZ a
 resource "aws_route_table_association" "public" {
   subnet_id      = aws_subnet.public.id
+  route_table_id = aws_route_table.public.id
+}
+
+# Route Table Association — AZ b
+resource "aws_route_table_association" "public_b" {
+  subnet_id      = aws_subnet.public_b.id
   route_table_id = aws_route_table.public.id
 }
 
