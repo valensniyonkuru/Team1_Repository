@@ -12,12 +12,17 @@ variable "instance_type" {
 variable "root_volume_size" {
   description = "Root volume size in GB"
   type        = number
-  default     = 30
+  default     = 50
 }
 
-variable "subnet_id" {
-  description = "Subnet ID for EC2 instance"
+variable "vpc_id" {
+  description = "VPC ID for target groups"
   type        = string
+}
+
+variable "subnet_ids" {
+  description = "List of subnet IDs for the ASG and ALB"
+  type        = list(string)
 }
 
 variable "security_group_id" {
@@ -35,4 +40,22 @@ variable "log_retention_days" {
   description = "CloudWatch log retention in days"
   type        = number
   default     = 30
+}
+
+variable "asg_desired" {
+  description = "Desired number of instances in the ASG"
+  type        = number
+  default     = 1
+}
+
+variable "asg_min" {
+  description = "Minimum number of instances in the ASG"
+  type        = number
+  default     = 1
+}
+
+variable "asg_max" {
+  description = "Maximum number of instances in the ASG"
+  type        = number
+  default     = 3
 }
