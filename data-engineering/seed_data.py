@@ -168,10 +168,7 @@ def upsert_users(conn: Connection, n_users: int) -> List[int]:
             }
         )
 
-    # Fetch IDs explicitly since tables lack DEFAULT nextval()
-    user_ids = [r[0] for r in conn.execute(text(f"SELECT nextval('users_seq') FROM generate_series(1, {len(users)})")).fetchall()]
-    for i, user in enumerate(users):
-        user["id"] = user_ids[i]
+    # IDs will be handled by nextval('users_seq') in the SQL INSERT
 
     sql = text("""
         INSERT INTO users (
@@ -313,10 +310,6 @@ def insert_posts(conn: Connection, user_ids: List[int], category_ids: List[int],
         post["id"] = post_ids[i]
 
     df = pd.DataFrame(posts)
-    n = len(df)
-    result = conn.execute(text(f"SELECT nextval('posts_seq') FROM generate_series(1, {n})"))
-    ids = [row[0] for row in result.fetchall()]
-    df.insert(0, "id", ids) #next_ids
     df.to_sql("posts", conn, if_exists="append", index=False, method="multi")
 
     return post_ids
@@ -342,11 +335,6 @@ def insert_comments(conn: Connection, user_ids: List[int], post_ids: List[int], 
         )
 
     df = pd.DataFrame(comments)
-    # Fetch next IDs from the sequence
-    n = len(df)
-    result = conn.execute(text(f"SELECT nextval('comments_seq') FROM generate_series(1, {n})"))
-    ids = [row[0] for row in result.fetchall()]
-    df.insert(0, "id", ids)
     df.to_sql("comments", conn, if_exists="append", index=False, method="multi")
 
 
