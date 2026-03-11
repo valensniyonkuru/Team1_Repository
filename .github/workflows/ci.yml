@@ -102,9 +102,120 @@ jobs:
         working-directory: ./qa/api-tests
         run: mvn -B test
 
+      - name: Parse test results (API tests)
+        if: always()
+        id: parse-api-results
+        run: |
+          TOTAL=0; PASSED=0; FAILED=0; SKIPPED=0; ERRORS=0
+          for f in qa/api-tests/target/surefire-reports/TEST-*.xml; do
+            [ -f "$f" ] || continue
+            t=$(grep  -oP 'tests="\K[0-9]+'    "$f" | head -1)
+            fa=$(grep -oP 'failures="\K[0-9]+' "$f" | head -1)
+            sk=$(grep -oP 'skipped="\K[0-9]+'  "$f" | head -1)
+            er=$(grep -oP 'errors="\K[0-9]+'   "$f" | head -1)
+            TOTAL=$((TOTAL   + ${t:-0}))
+            FAILED=$((FAILED  + ${fa:-0}))
+            SKIPPED=$((SKIPPED + ${sk:-0}))
+            ERRORS=$((ERRORS  + ${er:-0}))
+          done
+          PASSED=$((TOTAL - FAILED - SKIPPED - ERRORS))
+          [ "$TOTAL" -gt 0 ] && PASS_PCT=$((PASSED * 100 / TOTAL)) || PASS_PCT=0
+          echo "total=$TOTAL"       >> $GITHUB_OUTPUT
+          echo "passed=$PASSED"     >> $GITHUB_OUTPUT
+          echo "failed=$FAILED"     >> $GITHUB_OUTPUT
+          echo "skipped=$SKIPPED"   >> $GITHUB_OUTPUT
+          echo "errors=$ERRORS"     >> $GITHUB_OUTPUT
+          echo "pass_pct=$PASS_PCT" >> $GITHUB_OUTPUT
+          echo "### API Test Results: $PASSED/$TOTAL passed ($PASS_PCT%)" >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload Allure Results - API tests
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: allure-results-api-${{ github.run_number }}
+          path: qa/api-tests/target/allure-results/
+          retention-days: 30
+
+      - name: Generate Allure Report (API tests)
+        if: always()
+        working-directory: ./qa/api-tests
+        run: mvn allure:report --no-transfer-progress
+
+      - name: Upload Allure Report - API tests
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: allure-report-api-${{ github.run_number }}
+          path: qa/api-tests/target/site/allure-maven-plugin/
+          retention-days: 14
+
+      - name: Upload Surefire XML reports - API tests
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: surefire-reports-api-${{ github.run_number }}
+          path: qa/api-tests/target/surefire-reports/
+          retention-days: 14
+
       - name: Run UI tests (Selenium)
+        if: always()
         working-directory: ./qa/ui-tests
         run: mvn -B test
+
+      - name: Parse test results (UI tests)
+        if: always()
+        id: parse-ui-results
+        run: |
+          TOTAL=0; PASSED=0; FAILED=0; SKIPPED=0; ERRORS=0
+          for f in qa/ui-tests/target/surefire-reports/TEST-*.xml; do
+            [ -f "$f" ] || continue
+            t=$(grep  -oP 'tests="\K[0-9]+'    "$f" | head -1)
+            fa=$(grep -oP 'failures="\K[0-9]+' "$f" | head -1)
+            sk=$(grep -oP 'skipped="\K[0-9]+'  "$f" | head -1)
+            er=$(grep -oP 'errors="\K[0-9]+'   "$f" | head -1)
+            TOTAL=$((TOTAL   + ${t:-0}))
+            FAILED=$((FAILED  + ${fa:-0}))
+            SKIPPED=$((SKIPPED + ${sk:-0}))
+            ERRORS=$((ERRORS  + ${er:-0}))
+          done
+          PASSED=$((TOTAL - FAILED - SKIPPED - ERRORS))
+          [ "$TOTAL" -gt 0 ] && PASS_PCT=$((PASSED * 100 / TOTAL)) || PASS_PCT=0
+          echo "total=$TOTAL"       >> $GITHUB_OUTPUT
+          echo "passed=$PASSED"     >> $GITHUB_OUTPUT
+          echo "failed=$FAILED"     >> $GITHUB_OUTPUT
+          echo "skipped=$SKIPPED"   >> $GITHUB_OUTPUT
+          echo "errors=$ERRORS"     >> $GITHUB_OUTPUT
+          echo "pass_pct=$PASS_PCT" >> $GITHUB_OUTPUT
+          echo "### UI Test Results: $PASSED/$TOTAL passed ($PASS_PCT%)" >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload Allure Results - UI tests
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: allure-results-ui-${{ github.run_number }}
+          path: qa/ui-tests/target/allure-results/
+          retention-days: 30
+
+      - name: Generate Allure Report (UI tests)
+        if: always()
+        working-directory: ./qa/ui-tests
+        run: mvn allure:report --no-transfer-progress
+
+      - name: Upload Allure Report - UI tests
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: allure-report-ui-${{ github.run_number }}
+          path: qa/ui-tests/target/site/allure-maven-plugin/
+          retention-days: 14
+
+      - name: Upload Surefire XML reports - UI tests
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: surefire-reports-ui-${{ github.run_number }}
+          path: qa/ui-tests/target/surefire-reports/
+          retention-days: 14
 
       - name: Compose logs on failure
         if: failure()
