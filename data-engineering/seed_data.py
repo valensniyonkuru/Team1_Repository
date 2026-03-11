@@ -40,12 +40,61 @@ def rand_ts(days_back: int = 120) -> datetime:
     )
 
 
-def require_categories(conn: Connection) -> List[int]:
-    """Fetch category IDs and fail fast if categories are missing."""
+def ensure_categories(conn: Connection) -> List[int]:
+    """Ensure required categories exist with fixed IDs and return their IDs."""
+    required = [
+        (1, "NEWS", "Community news and announcements"),
+        (2, "EVENT", "Upcoming events and activities"),
+        (3, "DISCUSSION", "Open community discussions"),
+        (4, "ALERT", "Urgent notices and warnings"),
+    ]
+
+    # Inspect category table columns
+    cols = conn.execute(text("""
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_name = 'categories'
+        ORDER BY ordinal_position
+    """)).fetchall()
+    col_names = {r[0] for r in cols}
+
+    has_description = "description" in col_names
+
+    for category_id, name, description in required:
+        if has_description:
+            conn.execute(
+                text("""
+                    INSERT INTO categories (id, name, description)
+                    VALUES (:id, :name, :description)
+                    ON CONFLICT (id) DO UPDATE SET
+                        name = EXCLUDED.name,
+                        description = EXCLUDED.description
+                """),
+                {
+                    "id": category_id,
+                    "name": name,
+                    "description": description,
+                },
+            )
+        else:
+            conn.execute(
+                text("""
+                    INSERT INTO categories (id, name)
+                    VALUES (:id, :name)
+                    ON CONFLICT (id) DO UPDATE SET
+                        name = EXCLUDED.name
+                """),
+                {
+                    "id": category_id,
+                    "name": name,
+                },
+            )
+
     rows = conn.execute(text("SELECT id FROM categories ORDER BY id;")).fetchall()
     ids = [r[0] for r in rows]
+
     if not ids:
-        raise RuntimeError("No categories found. Start backend so it seeds categories")
+        raise RuntimeError("Categories table is still empty after attempted insert.")
     return ids
 
 
@@ -60,7 +109,7 @@ def clear_existing_data(conn: Connection) -> None:
 def upsert_users(conn: Connection, n_users: int) -> List[int]:
     """Insert or update users by unique email; returns all user IDs."""
     users = []
-    BCRYPT_PASSWORD = "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy"  # password123
+    BCRYPT_PASSWORD = "$2a$10$IXHfyQSclupPXbqi7RbAW..j8/ZU8WkwyoQHtZiHRfjnsjCBlVE5u"  # Password123!
 
     # Always include known accounts for testing
     fixed_users = [
@@ -69,7 +118,7 @@ def upsert_users(conn: Connection, n_users: int) -> List[int]:
             "name": "Admin User",
             "password": BCRYPT_PASSWORD,
             "role": "ADMIN",
-            "auth_provider": "LOCAL",
+            "auth_provider": "MANUAL",
             "google_id": None,
             "email_verified": True,
             "account_locked": False,
@@ -83,7 +132,7 @@ def upsert_users(conn: Connection, n_users: int) -> List[int]:
             "name": "Test User",
             "password": BCRYPT_PASSWORD,
             "role": "USER",
-            "auth_provider": "LOCAL",
+            "auth_provider": "MANUAL",
             "google_id": None,
             "email_verified": True,
             "account_locked": False,
@@ -108,7 +157,7 @@ def upsert_users(conn: Connection, n_users: int) -> List[int]:
                 "name": fake.name(),
                 "password": BCRYPT_PASSWORD,
                 "role": "USER",
-                "auth_provider": "LOCAL",
+                "auth_provider": "MANUAL",
                 "google_id": None,
                 "email_verified": True,
                 "account_locked": False,
@@ -119,28 +168,30 @@ def upsert_users(conn: Connection, n_users: int) -> List[int]:
             }
         )
 
+    # IDs will be handled by nextval('users_seq') in the SQL INSERT
+
     sql = text("""
         INSERT INTO users (
-            email, name, password, role,
-            "authProvider", "googleId", "emailVerified", "accountLocked",
-            "tokenVersion", "deletedAt", "createdAt", "updatedAt"
+            id, email, name, password, role, auth_provider, google_id,
+            email_verified, account_locked, token_version,
+            deleted_at, created_at, updated_at
         )
         VALUES (
-            :email, :name, :password, :role,
-            :auth_provider, :google_id, :email_verified, :account_locked,
-            :token_version, :deleted_at, :created_at, :updated_at
+            nextval('users_seq'), :email, :name, :password, :role, :auth_provider, :google_id,
+            :email_verified, :account_locked, :token_version,
+            :deleted_at, :created_at,:updated_at
         )
         ON CONFLICT (email) DO UPDATE SET
             name = EXCLUDED.name,
             password = EXCLUDED.password,
             role = EXCLUDED.role,
-            "authProvider" = EXCLUDED."authProvider",
-            "googleId" = EXCLUDED."googleId",
-            "emailVerified" = EXCLUDED."emailVerified",
-            "accountLocked" = EXCLUDED."accountLocked",
-            "tokenVersion" = EXCLUDED."tokenVersion",
-            "deletedAt" = EXCLUDED."deletedAt",
-            "updatedAt" = EXCLUDED."updatedAt"
+            auth_provider = EXCLUDED.auth_provider,
+            google_id = EXCLUDED.google_id,
+            email_verified = EXCLUDED.email_verified,
+            account_locked = EXCLUDED.account_locked,
+            token_version = EXCLUDED.token_version,
+            deleted_at = EXCLUDED.deleted_at,
+            updated_at = EXCLUDED.updated_at
     """)
 
     for row in users:
@@ -253,19 +304,29 @@ def insert_posts(conn: Connection, user_ids: List[int], category_ids: List[int],
             }
         )
 
+    seq_records = conn.execute(text(f"SELECT nextval('posts_seq') FROM generate_series(1, {len(posts)})")).fetchall()
+    post_ids = [r[0] for r in seq_records]
+    for i, post in enumerate(posts):
+        post["id"] = post_ids[i]
+
     df = pd.DataFrame(posts)
     df.to_sql("posts", conn, if_exists="append", index=False, method="multi")
 
-    post_ids = [r[0] for r in conn.execute(text("SELECT id FROM posts ORDER BY id;")).fetchall()]
     return post_ids
 
 
 def insert_comments(conn: Connection, user_ids: List[int], post_ids: List[int], n_comments: int) -> None:
     """Insert comments linked to existing posts and users."""
     comments = []
-    for _ in range(n_comments):
+    
+    # Pre-fetch sequences
+    seq_records = conn.execute(text(f"SELECT nextval('comments_seq') FROM generate_series(1, {n_comments})")).fetchall()
+    comment_ids = [r[0] for r in seq_records]
+
+    for i in range(n_comments):
         comments.append(
             {
+                "id": comment_ids[i],
                 "content": fake.sentence(nb_words=10).rstrip("."),
                 "created_at": rand_ts(40),
                 "author_id": RNG.choice(user_ids),
@@ -299,7 +360,7 @@ def main() -> None:
         # Autocommit for TRUNCATE + small inserts
         conn = conn.execution_options(isolation_level="AUTOCOMMIT")
 
-        category_ids = require_categories(conn)
+        category_ids = ensure_categories(conn)
 
         if SEED_RESET:
             log.info("SEED_RESET=1 -> truncating users/posts/comments for a clean seed run...")

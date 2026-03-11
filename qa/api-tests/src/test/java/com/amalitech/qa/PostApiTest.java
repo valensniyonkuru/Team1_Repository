@@ -21,6 +21,22 @@ public class PostApiTest {
         .when()
             .post("/api/auth/register");
 
+        // Verify the user email via JDBC so we can create posts
+        try (java.sql.Connection conn = java.sql.DriverManager.getConnection("jdbc:postgresql://localhost:5432/communityboard", "postgres", "dev_password_change_me");
+             java.sql.PreparedStatement stmt = conn.prepareStatement("UPDATE users SET email_verified = true WHERE email = ?")) {
+            stmt.setString(1, "posttester@test.com");
+            stmt.executeUpdate();
+        } catch (Exception e) {
+            // If dev_password_change_me fails, try 'postgres' password (used in some CI environments)
+            try (java.sql.Connection conn = java.sql.DriverManager.getConnection("jdbc:postgresql://localhost:5432/communityboard", "postgres", "postgres");
+                 java.sql.PreparedStatement stmt = conn.prepareStatement("UPDATE users SET email_verified = true WHERE email = ?")) {
+                stmt.setString(1, "posttester@test.com");
+                stmt.executeUpdate();
+            } catch (Exception ex) {
+                System.err.println("Failed to verify user email via JDBC: " + ex.getMessage());
+            }
+        }
+
         // Login to get token
         var response = given()
             .contentType(ContentType.JSON)
@@ -41,7 +57,7 @@ public class PostApiTest {
             .get("/api/posts")
         .then()
             .statusCode(200)
-            .body("content", notNullValue());
+            .body("data.content", notNullValue());
     }
 
     @Test
@@ -53,8 +69,8 @@ public class PostApiTest {
         .when()
             .post("/api/posts")
         .then()
-            .statusCode(200)
-            .body("title", equalTo("QA Test Post"));
+            .statusCode(201)
+            .body("data.title", equalTo("QA Test Post"));
     }
 
     // TODO: Add more post tests

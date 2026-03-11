@@ -41,6 +41,7 @@ const CreatePost = () => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
             type="text"
+            data-testid="post-title-input"
             placeholder="Post Title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -49,6 +50,7 @@ const CreatePost = () => {
           />
           <select
             value={categoryId}
+            data-testid="post-category-select"
             onChange={(e) => setCategoryId(e.target.value)}
             className="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
           >
@@ -57,6 +59,7 @@ const CreatePost = () => {
           </select>
           <textarea
             rows={8}
+            data-testid="post-content-input"
             placeholder="Write your post content..."
             value={content}
             onChange={(e) => setContent(e.target.value)}
@@ -65,6 +68,7 @@ const CreatePost = () => {
           />
           <button
             type="submit"
+            data-testid="post-submit-button"
             className="w-full rounded-md bg-primary py-2.5 font-medium text-white transition-colors hover:bg-primary-hover"
           >
             Publish Post

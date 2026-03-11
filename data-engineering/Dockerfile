@@ -27,4 +27,4 @@ USER appuser
 
 ENV PYTHONUNBUFFERED=1
 
-CMD ["python", "etl_pipeline.py"]
+CMD ["sh", "-c", "python seed_data.py && python etl_pipeline.py"]

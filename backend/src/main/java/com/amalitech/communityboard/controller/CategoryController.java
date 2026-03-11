@@ -19,5 +19,4 @@ public class CategoryController {
         return ResponseEntity.ok(categoryRepository.findAll());
     }
 
-    // TODO: Add CRUD endpoints for admin category management
 }

@@ -1,7 +1,7 @@
 # docker-compose.staging.yml — Staging Environment (develop branch)
 # Usage: docker compose -f docker-compose.staging.yml up -d
 # Requires: .env file populated from .env.develop (copy and fill real values)
-# Required env vars: DB_PASSWORD, JWT_SECRET, DOCKER_REGISTRY, DOCKER_NAMESPACE, REACT_APP_API_URL, MAIL_USERNAME, MAIL_PASSWORD
+# Required env vars: DB_PASSWORD, JWT_SECRET, DOCKER_REGISTRY, DOCKER_NAMESPACE, REACT_APP_API_URL, MAIL_USERNAME, MAIL_PASSWORD, REDIS_HOST, REDIS_PORT, REDIS_PASSWORD
 
 services:
   postgres:
@@ -29,24 +29,6 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  redis:
-    image: redis:7-alpine
-    container_name: communityboard-redis-staging
-    restart: always
-    # No host port exposure — Redis is internal only
-    networks:
-      - communityboard-staging
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "5m"
-        max-file: "2"
-
   backend:
     image: ${DOCKER_REGISTRY}/${DOCKER_NAMESPACE}/communityboard-backend:staging
     build:
@@ -63,16 +45,15 @@ services:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES:-staging}
       JWT_SECRET: ${JWT_SECRET}
       SERVER_PORT: 8080
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
       MAIL_USERNAME: ${MAIL_USERNAME}
       MAIL_PASSWORD: ${MAIL_PASSWORD}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT:-6379}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
     ports:
       - "8080:8080"
     depends_on:
       postgres:
-        condition: service_healthy
-      redis:
         condition: service_healthy
     networks:
       - communityboard-staging
