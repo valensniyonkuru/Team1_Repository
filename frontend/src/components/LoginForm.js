@@ -46,6 +46,7 @@ const LoginForm = ({ email, password, setEmail, setPassword, error, setError, ha
             <MailIcon hasError={!!error} />
             <input
               id="login-email"
+              data-testid="email-input"
               type="email"
               placeholder="your@example.com"
               value={email}
@@ -73,6 +74,7 @@ const LoginForm = ({ email, password, setEmail, setPassword, error, setError, ha
             <LockIcon />
             <input
               id="login-password"
+              data-testid="password-input"
               type={showPassword ? "text" : "password"}
               placeholder="Enter password"
               value={password}
@@ -103,6 +105,7 @@ const LoginForm = ({ email, password, setEmail, setPassword, error, setError, ha
       <div className="flex flex-col gap-5">
         <button
           type="submit"
+          data-testid="login-button"
           className="w-full rounded-lg bg-ping-dark px-5 py-2.5 font-inter text-sm font-medium text-white transition-colors hover:bg-ping-dark/90"
         >
           Log In
