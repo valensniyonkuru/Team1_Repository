@@ -30,7 +30,7 @@ N_COMMENTS = int(os.getenv("N_COMMENTS", "240"))
 engine = create_engine(DATABASE_URL)
 
 
-def rand_ts(days_back: int = 30) -> datetime:
+def rand_ts(days_back: int = 120) -> datetime:
     """Return a random UTC timestamp in the last `days_back` days."""
     now = datetime.utcnow()
     return now - timedelta(
@@ -45,7 +45,7 @@ def require_categories(conn: Connection) -> List[int]:
     rows = conn.execute(text("SELECT id FROM categories ORDER BY id;")).fetchall()
     ids = [r[0] for r in rows]
     if not ids:
-        raise RuntimeError("No categories found. Start backend so it seeds categories via data.sql.")
+        raise RuntimeError("No categories found. Start backend so it seeds categories")
     return ids
 
 
@@ -60,51 +60,196 @@ def clear_existing_data(conn: Connection) -> None:
 def upsert_users(conn: Connection, n_users: int) -> List[int]:
     """Insert or update users by unique email; returns all user IDs."""
     users = []
+    BCRYPT_PASSWORD = "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy"  # password123
 
-    # Ensure at least one admin
-    for i in range(n_users):
-        role = "ADMIN" if i == 0 else "USER"
+    # Always include known accounts for testing
+    fixed_users = [
+        {
+            "email": "admin@amalitech.com",
+            "name": "Admin User",
+            "password": BCRYPT_PASSWORD,
+            "role": "ADMIN",
+            "auth_provider": "LOCAL",
+            "google_id": None,
+            "email_verified": True,
+            "account_locked": False,
+            "token_version": 0,
+            "deleted_at": None,
+            "created_at": rand_ts(180),
+            "updated_at": rand_ts(60),
+        },
+        {
+            "email": "user@amalitech.com",
+            "name": "Test User",
+            "password": BCRYPT_PASSWORD,
+            "role": "USER",
+            "auth_provider": "LOCAL",
+            "google_id": None,
+            "email_verified": True,
+            "account_locked": False,
+            "token_version": 0,
+            "deleted_at": None,
+            "created_at": rand_ts(180),
+            "updated_at": rand_ts(60),
+        },
+    ]
+
+    users.extend(fixed_users)
+
+    remaining = max(0, n_users - len(fixed_users))
+
+    for _ in range(remaining):
+        created_at = rand_ts(180)
+        updated_at = created_at + timedelta(hours=RNG.randint(1, 48))
+
         users.append(
             {
-                "created_at": rand_ts(60),
                 "email": fake.unique.email(),
                 "name": fake.name(),
-                # This is NOT for app login (backend expects hashed passwords on registration).
-                "password": "seeded_password_not_for_login",
-                "role": role,
+                "password": BCRYPT_PASSWORD,
+                "role": "USER",
+                "auth_provider": "LOCAL",
+                "google_id": None,
+                "email_verified": True,
+                "account_locked": False,
+                "token_version": 0,
+                "deleted_at": None,
+                "created_at": created_at,
+                "updated_at": updated_at,
             }
         )
 
-    # UPSERT row-by-row for correctness (email is unique); n_users is small.
     sql = text("""
-        INSERT INTO users (created_at, email, name, password, role)
-        VALUES (:created_at, :email, :name, :password, :role)
+        INSERT INTO users (
+            email, name, password, role,
+            "authProvider", "googleId", "emailVerified", "accountLocked",
+            "tokenVersion", "deletedAt", "createdAt", "updatedAt"
+        )
+        VALUES (
+            :email, :name, :password, :role,
+            :auth_provider, :google_id, :email_verified, :account_locked,
+            :token_version, :deleted_at, :created_at, :updated_at
+        )
         ON CONFLICT (email) DO UPDATE SET
             name = EXCLUDED.name,
-            role = EXCLUDED.role
+            password = EXCLUDED.password,
+            role = EXCLUDED.role,
+            "authProvider" = EXCLUDED."authProvider",
+            "googleId" = EXCLUDED."googleId",
+            "emailVerified" = EXCLUDED."emailVerified",
+            "accountLocked" = EXCLUDED."accountLocked",
+            "tokenVersion" = EXCLUDED."tokenVersion",
+            "deletedAt" = EXCLUDED."deletedAt",
+            "updatedAt" = EXCLUDED."updatedAt"
     """)
 
     for row in users:
         conn.execute(sql, row)
 
-    # Return current IDs (all users in table)
-    ids = [r[0] for r in conn.execute(text("SELECT id FROM users ORDER BY id;")).fetchall()]
+    ids = [r[0] for r in conn.execute(text('SELECT id FROM users ORDER BY id;')).fetchall()]
     return ids
 
-
 def insert_posts(conn: Connection, user_ids: List[int], category_ids: List[int], n_posts: int) -> List[int]:
-    """Insert posts linked to existing users and categories; returns post IDs."""
+    """Insert posts with category-specific keywords and a date range spanning 3+ months."""
+    category_rows = conn.execute(text("SELECT id, name FROM categories ORDER BY id;")).fetchall()
+    category_map = {row[0]: row[1].upper() for row in category_rows}
+
+    category_templates = {
+        "NEWS": {
+            "title_keywords": ["NEWS community announcement", "NEWS neighborhood update",
+                "NEWS public notice", "NEWS local bulletin", "NEWS service update",
+            ],
+            "body_templates": [
+                "This NEWS update shares an important community announcement for all residents.",
+                "Please read this NEWS public notice regarding a recent neighborhood update.",
+                "This NEWS bulletin provides local information and community updates.",
+                "Residents are encouraged to attend this training session and public event this weekend.",
+            ],
+        },
+        "EVENT": {
+            "title_keywords": ["EVENT community meetup", "EVENT cleanup campaign",
+                "EVENT workshop announcement", "EVENT volunteer session", "EVENT sports gathering",
+            ],
+            "body_templates": [
+                "This EVENT invites residents to join a community meetup and participate actively.",
+                "A new EVENT has been scheduled for the neighborhood and all residents are welcome.",
+                "This EVENT announcement includes meeting details, participation guidance, and schedule information.",
+                "Residents are encouraged to attend this training session and public event this weekend.",
+            ],
+        },
+        "DISCUSSION": {
+            "title_keywords": ["DISCUSSION community ideas", "DISCUSSION resident feedback", "DISCUSSION public debate",
+                "DISCUSSION neighborhood conversation", "DISCUSSION local opinions",
+            ],
+            "body_templates": [
+                "This DISCUSSION post invites residents to share feedback and ideas on a local issue.",
+                "Join the DISCUSSION and contribute your opinion on community priorities.",
+                "This DISCUSSION thread is intended for neighborhood conversation and public feedback.",
+                "This discussion thread is intended to gather local feedback, suggestions, and perspectives.",
+            ],
+        },
+        "ALERT": {
+            "title_keywords": ["ALERT safety warning", "ALERT urgent notice",
+                "ALERT service disruption", "ALERT weather notice", "ALERT security issue",
+            ],
+            "body_templates": [
+                "This ALERT is being issued to inform residents about an urgent community issue.",
+                "Please note this ALERT and follow the safety guidance provided to residents.",
+                "An ALERT has been shared concerning a service disruption affecting the area.",
+                "This emergency notice provides important warning information for the local area.",
+            ],
+        },
+    }
+
     posts = []
-    for _ in range(n_posts):
-        created_at = rand_ts(30)
+
+    # Guarantee at least 10 posts per category when possible
+    min_per_category = min(10, n_posts // max(len(category_ids), 1))
+
+    for category_id in category_ids:
+        category_name = category_map.get(category_id, "NEWS")
+        templates = category_templates.get(category_name, category_templates["NEWS"])
+
+        for _ in range(min_per_category):
+            created_at = rand_ts(180)
+            title = RNG.choice(templates["title_keywords"]).title()
+            content = RNG.choice(templates["body_templates"])
+
+            # Add slight variation for better search realism
+            content = f"{content} {fake.sentence(nb_words=8)}"
+
+            posts.append(
+                {
+                    "content": content,
+                    "created_at": created_at,
+                    "title": title,
+                    "updated_at": created_at + timedelta(hours=RNG.randint(0, 72)),
+                    "author_id": RNG.choice(user_ids),
+                    "category_id": category_id,
+                }
+            )
+
+    # Fill the remaining posts randomly across categories
+    remaining = n_posts - len(posts)
+
+    for _ in range(remaining):
+        category_id = RNG.choice(category_ids)
+        category_name = category_map.get(category_id, "NEWS")
+        templates = category_templates.get(category_name, category_templates["NEWS"])
+
+        created_at = rand_ts(180)
+        title = RNG.choice(templates["title_keywords"]).title()
+        content = RNG.choice(templates["body_templates"])
+        content = f"{content} {fake.sentence(nb_words=8)}"
+
         posts.append(
             {
-                "content": fake.paragraph(nb_sentences=3),
+                "content": content,
                 "created_at": created_at,
-                "title": fake.sentence(nb_words=6).rstrip("."),
+                "title": title,
                 "updated_at": created_at + timedelta(hours=RNG.randint(0, 72)),
                 "author_id": RNG.choice(user_ids),
-                "category_id": RNG.choice(category_ids),
+                "category_id": category_id,
             }
         )
 
@@ -122,7 +267,7 @@ def insert_comments(conn: Connection, user_ids: List[int], post_ids: List[int], 
         comments.append(
             {
                 "content": fake.sentence(nb_words=10).rstrip("."),
-                "created_at": rand_ts(30),
+                "created_at": rand_ts(40),
                 "author_id": RNG.choice(user_ids),
                 "post_id": RNG.choice(post_ids),
             }
