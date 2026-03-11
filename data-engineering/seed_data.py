@@ -109,7 +109,7 @@ def clear_existing_data(conn: Connection) -> None:
 def upsert_users(conn: Connection, n_users: int) -> List[int]:
     """Insert or update users by unique email; returns all user IDs."""
     users = []
-    BCRYPT_PASSWORD = "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy"  # password123
+    BCRYPT_PASSWORD = "$2a$10$IXHfyQSclupPXbqi7RbAW..j8/ZU8WkwyoQHtZiHRfjnsjCBlVE5u"  # Password123!
 
     # Always include known accounts for testing
     fixed_users = [
@@ -167,6 +167,11 @@ def upsert_users(conn: Connection, n_users: int) -> List[int]:
                 "updated_at": updated_at,
             }
         )
+
+    # Fetch IDs explicitly since tables lack DEFAULT nextval()
+    user_ids = [r[0] for r in conn.execute(text(f"SELECT nextval('users_seq') FROM generate_series(1, {len(users)})")).fetchall()]
+    for i, user in enumerate(users):
+        user["id"] = user_ids[i]
 
     sql = text("""
         INSERT INTO users (
@@ -302,6 +307,11 @@ def insert_posts(conn: Connection, user_ids: List[int], category_ids: List[int],
             }
         )
 
+    seq_records = conn.execute(text(f"SELECT nextval('posts_seq') FROM generate_series(1, {len(posts)})")).fetchall()
+    post_ids = [r[0] for r in seq_records]
+    for i, post in enumerate(posts):
+        post["id"] = post_ids[i]
+
     df = pd.DataFrame(posts)
     n = len(df)
     result = conn.execute(text(f"SELECT nextval('posts_seq') FROM generate_series(1, {n})"))
@@ -309,16 +319,21 @@ def insert_posts(conn: Connection, user_ids: List[int], category_ids: List[int],
     df.insert(0, "id", ids) #next_ids
     df.to_sql("posts", conn, if_exists="append", index=False, method="multi")
 
-    post_ids = [r[0] for r in conn.execute(text("SELECT id FROM posts ORDER BY id;")).fetchall()]
     return post_ids
 
 
 def insert_comments(conn: Connection, user_ids: List[int], post_ids: List[int], n_comments: int) -> None:
     """Insert comments linked to existing posts and users."""
     comments = []
-    for _ in range(n_comments):
+    
+    # Pre-fetch sequences
+    seq_records = conn.execute(text(f"SELECT nextval('comments_seq') FROM generate_series(1, {n_comments})")).fetchall()
+    comment_ids = [r[0] for r in seq_records]
+
+    for i in range(n_comments):
         comments.append(
             {
+                "id": comment_ids[i],
                 "content": fake.sentence(nb_words=10).rstrip("."),
                 "created_at": rand_ts(40),
                 "author_id": RNG.choice(user_ids),
