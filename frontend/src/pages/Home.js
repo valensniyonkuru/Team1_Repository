@@ -1,8 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { postAPI } from "../services/api";
-import { Link } from "react-router-dom";
-
-/* ─── SVG Icon Components ──────────────────────────────────── */
+import CreatePostModal from "../components/CreatePostModal";
 
 const SearchIcon = ({ color = "#395362", size = 16 }) => (
   <svg
@@ -230,6 +228,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
 /* ─── Home Page ──────────────────────────────────────────── */
 
 const Home = () => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -245,7 +244,8 @@ const Home = () => {
     "Help Requests",
   ];
 
-  useEffect(() => {
+  const fetchPosts = useCallback(() => {
+    setLoading(true);
     postAPI
       .getAll(currentPage - 1, 10)
       .then((res) => {
@@ -256,6 +256,10 @@ const Home = () => {
       .catch((err) => console.error("Failed to load posts", err))
       .finally(() => setLoading(false));
   }, [currentPage]);
+
+  useEffect(() => {
+    fetchPosts();
+  }, [fetchPosts]);
 
   const filteredPosts = posts.filter(
     (p) =>
@@ -302,15 +306,15 @@ const Home = () => {
           </div>
 
           {/* Create post button */}
-          <Link
-            to="/create-post"
+          <button
+            onClick={() => setIsModalOpen(true)}
             className="w-full md:w-auto bg-ping-dark rounded-lg px-5 py-2.5 flex items-center justify-center gap-2 flex-shrink-0 transition-colors hover:bg-opacity-90 group"
           >
             <PlusIcon />
             <span className="font-medium text-sm text-ping-bg leading-[1.5]">
               Create post
             </span>
-          </Link>
+          </button>
         </div>
 
         {/* ── Category Filters ─────────────────────────── */}
@@ -372,6 +376,11 @@ const Home = () => {
           </div>
         )}
       </div>
+      <CreatePostModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        onPostCreated={fetchPosts}
+      />
     </div>
   );
 };
