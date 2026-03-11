@@ -200,18 +200,28 @@ def transform_content_stats(posts_df: pd.DataFrame) -> pd.DataFrame:
 # Load
 # -------------------------
 def load_analytics(df: pd.DataFrame, table_name: str) -> None:
-    """Load a dataframe into an analytics table (replace by default)."""
+    """Load a dataframe into an analytics table (truncate then append)."""
     if df is None:
         log.warning("Skipping load for %s: df is None", table_name)
         return
     try:
-        df.to_sql(table_name, engine, if_exists="replace", index=False)
-        log.warning("Using if_exists='replace' — table %s will be recreated", table_name)
+        with engine.connect() as conn:
+            table_exists = conn.execute(text("""
+                SELECT EXISTS (
+                    SELECT FROM information_schema.tables 
+                    WHERE table_name = :table_name
+                )
+            """), {"table_name": table_name}).scalar()
+
+            if table_exists:
+                conn.execute(text(f"TRUNCATE TABLE {table_name}"))
+                log.info("Truncated table %s", table_name)
+
+        df.to_sql(table_name, engine, if_exists="append", index=False)
         log.info("Loaded %d rows into %s", len(df), table_name)
     except Exception as e:
         log.error("Failed to load analytics table %s: %s", table_name, e)
         raise
-
 
 # -------------------------
 # Pipeline
