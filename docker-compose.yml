@@ -119,7 +119,7 @@ services:
       PYTHONUNBUFFERED: "1"
     depends_on:
       backend:
-        condition: service_started
+        condition: service_healthy
       postgres:
         condition: service_healthy
     networks:
