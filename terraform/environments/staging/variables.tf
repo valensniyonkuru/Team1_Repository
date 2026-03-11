@@ -45,3 +45,21 @@ variable "log_retention_days" {
   type        = number
   default     = 14
 }
+
+variable "asg_desired" {
+  description = "Desired number of instances in the ASG"
+  type        = number
+  default     = 1
+}
+
+variable "asg_min" {
+  description = "Minimum number of instances in the ASG"
+  type        = number
+  default     = 1
+}
+
+variable "asg_max" {
+  description = "Maximum number of instances in the ASG"
+  type        = number
+  default     = 3
+}
