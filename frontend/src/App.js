@@ -10,6 +10,7 @@ import VerifyEmail from "./pages/auth/VerifyEmail";
 import ResendVerification from "./pages/auth/ResendVerification";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import ResetPassword from "./pages/auth/ResetPassword";
+import PostDetails from "./pages/PostDetails";
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/create-post" element={<CreatePost />} />
+            <Route path="/posts/:id" element={<PostDetails />} />
             <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/resend-verification" element={<ResendVerification />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />

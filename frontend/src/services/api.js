@@ -80,7 +80,9 @@ export const categoryAPI = {
   getAll: () => API.get("/categories"),
 };
 
-// TODO: Add comment API calls
-// TODO: Add search API calls
+export const commentAPI = {
+  getByPostId: (postId) => API.get(`/posts/${postId}/comments`),
+  create: (postId, data) => API.post(`/posts/${postId}/comments`, data),
+};
 
 export default API;

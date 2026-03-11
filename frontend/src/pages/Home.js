@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { postAPI } from "../services/api";
 import CreatePostModal from "../components/CreatePostModal";
+import { Link } from "react-router-dom";
 
 const SearchIcon = ({ color = "#395362", size = 16 }) => (
   <svg
@@ -131,7 +132,7 @@ function timeAgo(dateString) {
 
 /* ─── Post Card Component ────────────────────────────────── */
 
-const PostCard = ({ title, body, category, author, time, commentCount }) => {
+const PostCard = ({ id, title, body, category, author, time, commentCount }) => {
   const colors = CATEGORY_COLORS[category] || getDefaultColors();
 
   return (
@@ -140,9 +141,9 @@ const PostCard = ({ title, body, category, author, time, commentCount }) => {
       <div className="flex items-center justify-between gap-4">
         <h2 
           data-testid="post-title"
-          className="flex-1 text-xl font-semibold leading-[1.5] text-ping-heading"
+          className="flex-1 text-xl font-semibold leading-[1.5] text-ping-heading hover:text-ping-dark transition-colors"
         >
-          {title}
+          <Link to={`/posts/${id}`}>{title}</Link>
         </h2>
         {category && (
           <span
@@ -357,6 +358,7 @@ const Home = () => {
               {filteredPosts.map((post) => (
                 <PostCard
                   key={post.id}
+                  id={post.id}
                   title={post.title}
                   body={post.content}
                   category={post.categoryName}
