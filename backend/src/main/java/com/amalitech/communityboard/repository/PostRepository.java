@@ -12,6 +12,8 @@ import java.util.List;
 
 public interface PostRepository extends JpaRepository<Post, Long>, JpaSpecificationExecutor<Post> {
 
+    boolean existsByCategory_Id(Long categoryId);
+
     @Query("""
     SELECT p AS post , COUNT(c.id) AS commentCount
     FROM Post p
