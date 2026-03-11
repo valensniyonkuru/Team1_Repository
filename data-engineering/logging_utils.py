@@ -1,7 +1,7 @@
 """
 - Console + file logging
 - Rotating log files to avoid huge log sizes
-- Log level controlled via LOG_LEVEL env var (default: INFO)
+- Logging level controlled via LOG_LEVEL env var (default: INFO)
 """
 
 from __future__ import annotations

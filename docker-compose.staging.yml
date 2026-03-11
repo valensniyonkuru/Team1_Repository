@@ -1,7 +1,7 @@
 # docker-compose.staging.yml — Staging Environment (develop branch)
 # Usage: docker compose -f docker-compose.staging.yml up -d
 # Requires: .env file populated from .env.develop (copy and fill real values)
-# Required env vars: DB_PASSWORD, JWT_SECRET, DOCKER_REGISTRY, DOCKER_NAMESPACE, REACT_APP_API_URL
+# Required env vars: DB_PASSWORD, JWT_SECRET, DOCKER_REGISTRY, DOCKER_NAMESPACE, REACT_APP_API_URL, MAIL_USERNAME, MAIL_PASSWORD, REDIS_HOST, REDIS_PORT, REDIS_PASSWORD
 
 services:
   postgres:
@@ -45,6 +45,11 @@ services:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES:-staging}
       JWT_SECRET: ${JWT_SECRET}
       SERVER_PORT: 8080
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT:-6379}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
     ports:
       - "8080:8080"
     depends_on:

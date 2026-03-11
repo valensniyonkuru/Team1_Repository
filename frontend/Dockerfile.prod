@@ -18,6 +18,10 @@ ENV REACT_APP_API_URL=$REACT_APP_API_URL
 COPY frontend/package*.json ./
 RUN npm ci --legacy-peer-deps && npm cache clean --force
 
+# Copy Tailwind and PostCSS config files (required for CSS processing during build)
+COPY frontend/tailwind.config.js ./
+COPY frontend/postcss.config.js ./
+
 # Copy source code
 COPY frontend/src ./src
 COPY frontend/public ./public
