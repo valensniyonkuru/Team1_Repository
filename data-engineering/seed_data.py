@@ -40,12 +40,61 @@ def rand_ts(days_back: int = 120) -> datetime:
     )
 
 
-def require_categories(conn: Connection) -> List[int]:
-    """Fetch category IDs and fail fast if categories are missing."""
+def ensure_categories(conn: Connection) -> List[int]:
+    """Ensure required categories exist with fixed IDs and return their IDs."""
+    required = [
+        (1, "NEWS", "Community news and announcements"),
+        (2, "EVENT", "Upcoming events and activities"),
+        (3, "DISCUSSION", "Open community discussions"),
+        (4, "ALERT", "Urgent notices and warnings"),
+    ]
+
+    # Inspect category table columns
+    cols = conn.execute(text("""
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_name = 'categories'
+        ORDER BY ordinal_position
+    """)).fetchall()
+    col_names = {r[0] for r in cols}
+
+    has_description = "description" in col_names
+
+    for category_id, name, description in required:
+        if has_description:
+            conn.execute(
+                text("""
+                    INSERT INTO categories (id, name, description)
+                    VALUES (:id, :name, :description)
+                    ON CONFLICT (id) DO UPDATE SET
+                        name = EXCLUDED.name,
+                        description = EXCLUDED.description
+                """),
+                {
+                    "id": category_id,
+                    "name": name,
+                    "description": description,
+                },
+            )
+        else:
+            conn.execute(
+                text("""
+                    INSERT INTO categories (id, name)
+                    VALUES (:id, :name)
+                    ON CONFLICT (id) DO UPDATE SET
+                        name = EXCLUDED.name
+                """),
+                {
+                    "id": category_id,
+                    "name": name,
+                },
+            )
+
     rows = conn.execute(text("SELECT id FROM categories ORDER BY id;")).fetchall()
     ids = [r[0] for r in rows]
+
     if not ids:
-        raise RuntimeError("No categories found. Start backend so it seeds categories")
+        raise RuntimeError("Categories table is still empty after attempted insert.")
     return ids
 
 
@@ -126,14 +175,14 @@ def upsert_users(conn: Connection, n_users: int) -> List[int]:
 
     sql = text("""
         INSERT INTO users (
-            id, email, name, password, role,
-            auth_provider, google_id, email_verified, account_locked,
-            token_version, deleted_at, created_at, updated_at
+            id, email, name, password, role, auth_provider, google_id,
+            email_verified, account_locked, token_version,
+            deleted_at, created_at, updated_at
         )
         VALUES (
-            :id, :email, :name, :password, :role,
-            :auth_provider, :google_id, :email_verified, :account_locked,
-            :token_version, :deleted_at, :created_at, :updated_at
+            nextval('users_seq'), :email, :name, :password, :role, :auth_provider, :google_id,
+            :email_verified, :account_locked, :token_version,
+            :deleted_at, :created_at,:updated_at
         )
         ON CONFLICT (email) DO UPDATE SET
             name = EXCLUDED.name,
@@ -264,6 +313,10 @@ def insert_posts(conn: Connection, user_ids: List[int], category_ids: List[int],
         post["id"] = post_ids[i]
 
     df = pd.DataFrame(posts)
+    n = len(df)
+    result = conn.execute(text(f"SELECT nextval('posts_seq') FROM generate_series(1, {n})"))
+    ids = [row[0] for row in result.fetchall()]
+    df.insert(0, "id", ids) #next_ids
     df.to_sql("posts", conn, if_exists="append", index=False, method="multi")
 
     return post_ids
@@ -289,6 +342,11 @@ def insert_comments(conn: Connection, user_ids: List[int], post_ids: List[int], 
         )
 
     df = pd.DataFrame(comments)
+    # Fetch next IDs from the sequence
+    n = len(df)
+    result = conn.execute(text(f"SELECT nextval('comments_seq') FROM generate_series(1, {n})"))
+    ids = [row[0] for row in result.fetchall()]
+    df.insert(0, "id", ids)
     df.to_sql("comments", conn, if_exists="append", index=False, method="multi")
 
 
@@ -314,7 +372,7 @@ def main() -> None:
         # Autocommit for TRUNCATE + small inserts
         conn = conn.execution_options(isolation_level="AUTOCOMMIT")
 
-        category_ids = require_categories(conn)
+        category_ids = ensure_categories(conn)
 
         if SEED_RESET:
             log.info("SEED_RESET=1 -> truncating users/posts/comments for a clean seed run...")

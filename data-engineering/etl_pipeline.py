@@ -128,10 +128,25 @@ def transform_user_engagement(posts_df: pd.DataFrame, comments_df: pd.DataFrame)
 
 
 def transform_category_trends(posts_df: pd.DataFrame) -> pd.DataFrame:
-    """Category popularity over time (daily): posts per category per day."""
-    # This is basically daily_activity but kept separate for clarity/extension later
-    return transform_daily_activity(posts_df)
+    """Total posts per category."""
+    if posts_df.empty:
+        return pd.DataFrame(columns=["category", "total_posts"])
 
+    df = posts_df.copy()
+    df["category_name"] = df["category_name"].fillna("Uncategorized")
+    return (
+        df.groupby("category_name")
+        .size()
+        .reset_index(name="total_posts")
+        .rename(columns={"category_name": "category"})
+        .sort_values("total_posts", ascending=False)
+        .reset_index(drop=True)
+    )
+def transform_top_contributors(user_engagement_df: pd.DataFrame) -> pd.DataFrame:
+    """Top 5 most engaged users."""
+    if user_engagement_df.empty:
+        return pd.DataFrame()
+    return user_engagement_df.head(5).reset_index(drop=True)
 
 def transform_content_stats(posts_df: pd.DataFrame) -> pd.DataFrame:
     """Basic content length stats per day (avg title/content length)."""
@@ -168,6 +183,7 @@ def load_analytics(df: pd.DataFrame, table_name: str) -> None:
 
     full_table = table_name  # schema handling
     df.to_sql(full_table, engine, if_exists="replace", index=False)
+    log.warning("Using if_exists='replace' — table %s will be recreated", table_name)
     log.info("Loaded %d rows into %s", len(df), full_table)
 
 
@@ -187,21 +203,22 @@ def run_pipeline() -> None:
     daily_activity = transform_daily_activity(posts_df)
     user_engagement = transform_user_engagement(posts_df, comments_df)
     category_trends = transform_category_trends(posts_df)
+    top_contributors = transform_top_contributors(user_engagement)
     content_stats = transform_content_stats(posts_df)
 
     log.info(
-        "Transformed: daily_activity=%d, user_engagement=%d, category_trends=%d, content_stats=%d",
-        len(daily_activity), len(user_engagement), len(category_trends), len(content_stats)
+        "Transformed: daily_activity=%d, user_engagement=%d, category_trends=%d, top_contributors=%d, content_stats=%d",
+        len(daily_activity), len(user_engagement), len(category_trends), len(top_contributors), len(content_stats)
     )
 
-    # Load
+    # Loading
     load_analytics(daily_activity, "analytics_daily_activity")
     load_analytics(user_engagement, "analytics_user_engagement")
     load_analytics(category_trends, "analytics_category_trends")
+    load_analytics(top_contributors, "analytics_top_contributors")
     load_analytics(content_stats, "analytics_content_stats")
 
     log.info("ETL pipeline complete!")
-
 
 if __name__ == "__main__":
     run_pipeline()
