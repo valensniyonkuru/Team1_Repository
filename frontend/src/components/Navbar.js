@@ -166,15 +166,6 @@ const Navbar = () => {
                   Analytics
                 </span>
               </Link>
-              <Link
-                to="/create-post"
-                className="flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 transition-colors hover:bg-gray-100"
-              >
-                <PenIcon />
-                <span className="font-inter text-sm font-medium text-[#061c2a]">
-                  New Post
-                </span>
-              </Link>
             </div>
 
             <div className="hidden items-center gap-2.5 sm:flex">

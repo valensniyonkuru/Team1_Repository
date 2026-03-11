@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import { postAPI, commentAPI } from "../services/api";
+import { useAuth } from "../context/AuthContext";
 
 // --- Icons ---
 const HomeIcon = () => (
@@ -77,11 +78,16 @@ const Avatar = ({ name, size = "md" }) => {
 
 const PostDetails = () => {
   const { id } = useParams();
+  const { user } = useAuth();
   const [post, setPost] = useState(null);
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [commentContent, setCommentContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [editingCommentId, setEditingCommentId] = useState(null);
+  const [editingContent, setEditingContent] = useState("");
+  const [deletingCommentId, setDeletingCommentId] = useState(null);
+  const [commentError, setCommentError] = useState("");
 
   const fetchData = useCallback(async () => {
     try {
@@ -112,17 +118,57 @@ const PostDetails = () => {
 
     try {
       setSubmitting(true);
+      setCommentError("");
       await commentAPI.create(id, { content: commentContent });
       setCommentContent("");
       const res = await commentAPI.getByPostId(id);
       const commentsData = res.data?.data || res.data;
       setComments(commentsData?.content || (Array.isArray(commentsData) ? commentsData : []));
     } catch (err) {
-      console.error("Error adding comment:", err);
+      const message = err.response?.data?.message || "Failed to add comment. Please try again.";
+      setCommentError(message);
     } finally {
       setSubmitting(false);
     }
   };
+
+  const handleEditStart = (comment) => {
+    setEditingCommentId(comment.id);
+    setEditingContent(comment.content);
+  };
+
+  const handleEditCancel = () => {
+    setEditingCommentId(null);
+    setEditingContent("");
+  };
+
+  const handleEditSave = async (commentId) => {
+    if (!editingContent.trim()) return;
+    try {
+      await commentAPI.update(id, commentId, { content: editingContent });
+      setComments((prev) =>
+        prev.map((c) => c.id === commentId ? { ...c, content: editingContent.trim() } : c)
+      );
+      setEditingCommentId(null);
+      setEditingContent("");
+    } catch (err) {
+      console.error("Error updating comment:", err);
+    }
+  };
+
+  const handleDeleteConfirm = async (commentId) => {
+    try {
+      await commentAPI.delete(id, commentId);
+      setComments((prev) => prev.filter((c) => c.id !== commentId));
+    } catch (err) {
+      console.error("Error deleting comment:", err);
+    } finally {
+      setDeletingCommentId(null);
+    }
+  };
+
+  const canModifyComment = (comment) =>
+    user && (user.name === comment.authorName || user.role === "ADMIN");
 
   const formatDate = (dateString, format = "relative") => {
     const date = new Date(dateString);
@@ -213,6 +259,9 @@ const PostDetails = () => {
                 placeholder="Share your thoughts..."
                 className="w-full h-[218px] px-[16px] py-[12px] bg-ping-input-bg border border-ping-input-border rounded-[8px] text-[14px] text-ping-body-primary placeholder:text-ping-body focus:outline-none focus:ring-1 focus:ring-ping-dark resize-none font-inter leading-[1.5]"
               />
+              {commentError && (
+                <p className="w-full text-[13px] font-inter text-[#c81e1e]">{commentError}</p>
+              )}
               <button 
                 type="submit"
                 disabled={submitting || !commentContent.trim()}
@@ -237,6 +286,27 @@ const PostDetails = () => {
                 <div className="flex flex-col gap-[24px] w-full">
                   {comments.map((comment, index) => (
                     <React.Fragment key={comment.id}>
+                      {/* Delete Confirmation Inline Banner */}
+                      {deletingCommentId === comment.id && (
+                        <div className="flex items-center justify-between gap-[16px] bg-[#fff1f1] border border-[#fca5a5] rounded-[8px] px-[16px] py-[12px]">
+                          <span className="text-[14px] font-inter text-[#991b1b]">Delete this comment? This cannot be undone.</span>
+                          <div className="flex items-center gap-[12px]">
+                            <button
+                              onClick={() => setDeletingCommentId(null)}
+                              className="text-[14px] font-medium font-inter text-ping-body hover:opacity-70 transition-opacity px-[12px] py-[6px] border border-ping-stroke rounded-[6px]"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              onClick={() => handleDeleteConfirm(comment.id)}
+                              className="text-[14px] font-medium font-inter text-white bg-[#dc2626] hover:bg-[#b91c1c] transition-colors px-[12px] py-[6px] rounded-[6px]"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
                       {/* Comment Item - Matches 16:1021 */}
                       <div className="flex items-start justify-between gap-[16px] w-full">
                         <div className="flex flex-col gap-[16px] flex-1 max-w-full">
@@ -252,21 +322,57 @@ const PostDetails = () => {
                               </p>
                             </div>
                           </div>
-                          {/* Comment content - Matches 16:1013 */}
-                          <p className="text-[16px] font-normal font-inter text-ping-body leading-[1.5] w-full break-words">
-                            {comment.content}
-                          </p>
+
+                          {/* Comment content or inline edit form */}
+                          {editingCommentId === comment.id ? (
+                            <div className="flex flex-col gap-[8px] w-full">
+                              <textarea
+                                value={editingContent}
+                                onChange={(e) => setEditingContent(e.target.value)}
+                                className="w-full h-[100px] px-[16px] py-[12px] bg-ping-input-bg border border-ping-input-border rounded-[8px] text-[14px] text-ping-body-primary focus:outline-none focus:ring-1 focus:ring-ping-dark resize-none font-inter leading-[1.5]"
+                              />
+                              <div className="flex items-center gap-[8px]">
+                                <button
+                                  onClick={() => handleEditSave(comment.id)}
+                                  disabled={!editingContent.trim()}
+                                  className="text-[13px] font-medium font-inter text-white bg-ping-dark hover:opacity-90 transition-opacity px-[14px] py-[6px] rounded-[6px] disabled:opacity-50"
+                                >
+                                  Save
+                                </button>
+                                <button
+                                  onClick={handleEditCancel}
+                                  className="text-[13px] font-medium font-inter text-ping-body hover:opacity-70 transition-opacity px-[14px] py-[6px] border border-ping-stroke rounded-[6px]"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <p className="text-[16px] font-normal font-inter text-ping-body leading-[1.5] w-full break-words">
+                              {comment.content}
+                            </p>
+                          )}
                         </div>
 
-                        {/* Action Icons - Matches 16:1052 */}
-                        <div className="flex items-center gap-[32px] shrink-0 text-ping-placeholder">
-                          <button className="hover:opacity-70 transition-opacity flex items-center justify-center p-1" title="Edit">
-                            <PenIcon />
-                          </button>
-                          <button className="hover:opacity-70 transition-opacity flex items-center justify-center p-1" title="Delete">
-                            <TrashIcon />
-                          </button>
-                        </div>
+                        {/* Action Icons - only visible to author or admin */}
+                        {canModifyComment(comment) && editingCommentId !== comment.id && (
+                          <div className="flex items-center gap-[32px] shrink-0 text-ping-placeholder">
+                            <button
+                              onClick={() => handleEditStart(comment)}
+                              className="hover:opacity-70 transition-opacity flex items-center justify-center p-1"
+                              title="Edit"
+                            >
+                              <PenIcon />
+                            </button>
+                            <button
+                              onClick={() => setDeletingCommentId(comment.id)}
+                              className="hover:opacity-70 transition-opacity flex items-center justify-center p-1 text-[#dc2626]"
+                              title="Delete"
+                            >
+                              <TrashIcon />
+                            </button>
+                          </div>
+                        )}
                       </div>
                       
                       {/* Divider - Matches 16:1019 */}

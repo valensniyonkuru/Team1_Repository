@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { authAPI } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 
@@ -48,7 +48,9 @@ const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
-  const navigate = useNavigate();
+  const [registered, setRegistered] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState("");
+  const [resendStatus, setResendStatus] = useState(""); // "", "sending", "sent", "error"
   const { login } = useAuth();
 
   const handleSubmit = async (e) => {
@@ -69,9 +71,8 @@ const Register = () => {
 
       login({ name: payload.name, email: payload.email, role: payload.role }, token, refreshToken);
       
-      // Navigate to a dedicated "Please verify your email" success landing or just to home for now
-      // Home is fine if AuthContext.js guards unverified behavior, but let's go with the success flow.
-      navigate("/");
+      setRegisteredEmail(email);
+      setRegistered(true);
     } catch (err) {
       if (err.response?.data) {
         if (err.response.data.errors && Object.keys(err.response.data.errors).length > 0) {
@@ -88,9 +89,65 @@ const Register = () => {
     }
   };
 
+  const handleResend = async () => {
+    try {
+      setResendStatus("sending");
+      await authAPI.resendVerification({ email: registeredEmail });
+      setResendStatus("sent");
+    } catch {
+      setResendStatus("error");
+    }
+  };
+
   return (
     <div className="flex min-h-[calc(100vh-64px)] items-center justify-center bg-ping-bg px-0 sm:px-6">
       <div className="w-full max-w-[428px] rounded-none sm:rounded-3xl sm:border border-ping-stroke px-6 sm:px-8 py-6">
+        {registered ? (
+          <div className="flex flex-col items-center gap-8 text-center">
+            <img src="/assets/Logo.svg" alt="Ping" className="h-[38px] w-[100px]" />
+            {/* Mail illustration */}
+            <div className="flex items-center justify-center w-[72px] h-[72px] rounded-full bg-[#e1effe]">
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#1e429f" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="4" width="20" height="16" rx="2" />
+                <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+              </svg>
+            </div>
+            <div className="flex flex-col items-center gap-3">
+              <h1 className="font-poppins text-[28px] font-semibold text-ping-heading leading-tight">
+                Check your inbox
+              </h1>
+              <p className="font-inter text-base font-normal text-ping-body leading-relaxed">
+                We've sent a verification link to<br />
+                <span className="font-semibold text-ping-body-primary">{registeredEmail}</span>
+              </p>
+              <p className="font-inter text-sm text-ping-body">
+                Click the link in the email to activate your account. If you don't see it, check your spam folder.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-3 w-full">
+              {resendStatus === "sent" && (
+                <p className="text-sm font-medium font-inter text-green-600">Verification email resent!</p>
+              )}
+              {resendStatus === "error" && (
+                <p className="text-sm font-medium font-inter text-[#c81e1e]">Failed to resend. Please try again.</p>
+              )}
+              <button
+                onClick={handleResend}
+                disabled={resendStatus === "sending" || resendStatus === "sent"}
+                className="w-full rounded-lg border border-ping-stroke bg-white py-2.5 font-inter text-sm font-medium text-ping-body-primary transition-colors hover:bg-ping-bg disabled:opacity-50"
+              >
+                {resendStatus === "sending" ? "Sending..." : "Resend verification email"}
+              </button>
+              <Link
+                to="/login"
+                className="w-full rounded-lg bg-ping-dark py-2.5 font-inter text-sm font-medium text-white text-center transition-colors hover:bg-ping-dark/90"
+              >
+                Go to Login
+              </Link>
+            </div>
+          </div>
+        ) : (
         <div className="flex flex-col items-center gap-12">
           {/* Logo + Header */}
           <div className="flex flex-col items-center gap-8">
@@ -232,6 +289,7 @@ const Register = () => {
             </div>
           </form>
         </div>
+        )}
       </div>
     </div>
   );

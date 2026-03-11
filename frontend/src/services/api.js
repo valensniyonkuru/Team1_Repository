@@ -2,10 +2,25 @@ import axios from "axios";
 
 const API = axios.create({ baseURL: "/api" });
 
+const AUTH_PUBLIC_PATHS = [
+  "/auth/login",
+  "/auth/register",
+  "/auth/refresh",
+  "/auth/verify-email",
+  "/auth/resend-verification",
+  "/auth/forgot-password",
+  "/auth/reset-password",
+];
+
 API.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  const isPublicAuthEndpoint = AUTH_PUBLIC_PATHS.some((path) =>
+    config.url?.includes(path)
+  );
+  if (!isPublicAuthEndpoint) {
+    const token = localStorage.getItem("token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
   }
   return config;
 });
@@ -83,6 +98,8 @@ export const categoryAPI = {
 export const commentAPI = {
   getByPostId: (postId) => API.get(`/posts/${postId}/comments`),
   create: (postId, data) => API.post(`/posts/${postId}/comments`, data),
+  update: (postId, commentId, data) => API.put(`/posts/${postId}/comments/${commentId}`, data),
+  delete: (postId, commentId) => API.delete(`/posts/${postId}/comments/${commentId}`),
 };
 
 export default API;
