@@ -12,6 +12,7 @@ import com.amalitech.communityboard.security.TokenBlacklistService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -57,6 +58,7 @@ public class AccountService {
         return toUserResponse(user);
     }
 
+    @PreAuthorize("hasRole('ADMIN') or #author.id == principal.id ")
     @Transactional
     public UserResponse changeEmail(User currentUser, ChangeEmailRequest request, HttpServletRequest httpRequest) {
         User user = userRepository.findByIdAndDeletedAtIsNull(currentUser.getId())
