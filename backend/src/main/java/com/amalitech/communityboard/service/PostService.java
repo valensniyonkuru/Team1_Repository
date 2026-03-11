@@ -15,6 +15,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.persistence.EntityNotFoundException;
 import java.time.LocalDateTime;
 
 @Service
@@ -68,7 +69,13 @@ public class PostService {
     public PostResponse updatePost(Long id, PostRequest request, User author) {
         Post post = postRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Post not found"));
-        if (!post.getAuthor().getId().equals(author.getId())) {
+        boolean isAuthor;
+        try {
+            isAuthor = post.getAuthor().getId().equals(author.getId());
+        } catch (EntityNotFoundException e) {
+            isAuthor = false; 
+        }
+        if (!isAuthor && !author.getRole().name().equals("ADMIN")) {
             throw new ForbiddenException("Not authorized to update this post");
         }
         post.setTitle(request.getTitle().trim());
@@ -77,14 +84,21 @@ public class PostService {
         return toResponse(postRepository.save(post));
     }
 
+    @Transactional
     @PreAuthorize("hasRole('ADMIN') or #author.id == principal.id ")
     public void deletePost(Long id, User author) {
         Post post = postRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Post not found"));
-        if (!post.getAuthor().getId().equals(author.getId())
-                && !author.getRole().name().equals("ADMIN")) {
+        boolean isAuthor;
+        try {
+            isAuthor = post.getAuthor().getId().equals(author.getId());
+        } catch (EntityNotFoundException e) {
+            isAuthor = false;
+        }
+        if (!isAuthor && !author.getRole().name().equals("ADMIN")) {
             throw new ForbiddenException("Not authorized to delete this post");
         }
+        commentRepository.deleteByPostId(id);
         postRepository.delete(post);
     }
 
@@ -118,14 +132,28 @@ public class PostService {
     }
 
     private PostResponse buildResponse(Post post, long commentCount) {
+        String authorName;
+        String authorEmail;
+        try {
+            if (post.getAuthor() == null || post.getAuthor().getDeletedAt() != null) {
+                authorName = "Deleted User";
+                authorEmail = null;
+            } else {
+                authorName = post.getAuthor().getName();
+                authorEmail = post.getAuthor().getEmail();
+            }
+        } catch (EntityNotFoundException e) {
+            authorName = "Unknown Author";
+            authorEmail = null;
+        }
         return PostResponse.builder()
                 .id(post.getId())
                 .title(post.getTitle())
                 .content(post.getContent())
                 .categoryId(post.getCategory() != null ? post.getCategory().getId() : null)
                 .categoryName(post.getCategory() != null ? post.getCategory().getName() : null)
-                .authorName(post.getAuthor().getName())
-                .authorEmail(post.getAuthor().getEmail())
+                .authorName(authorName)
+                .authorEmail(authorEmail)
                 .createdAt(post.getCreatedAt())
                 .updatedAt(post.getUpdatedAt())
                 .commentCount(commentCount)
