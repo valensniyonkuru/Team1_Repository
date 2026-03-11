@@ -38,8 +38,12 @@ def get_posts_per_category() -> pd.DataFrame:
         FROM analytics_category_trends
         ORDER BY total_posts DESC, category ASC
     """)
-    with engine.connect() as conn:
-        return pd.read_sql(query, conn)
+    try:
+        with engine.connect() as conn:
+            return pd.read_sql(query, conn)
+    except Exception as e:
+        log.error("Failed to query posts per category: %s", e)
+        raise
 
 
 def get_activity_trends() -> pd.DataFrame:
@@ -49,8 +53,12 @@ def get_activity_trends() -> pd.DataFrame:
         FROM analytics_daily_activity
         ORDER BY date ASC, category ASC
     """)
-    with engine.connect() as conn:
-        return pd.read_sql(query, conn)
+    try:
+        with engine.connect() as conn:
+            return pd.read_sql(query, conn)
+    except Exception as e:
+        log.error("Failed to query activity trends: %s", e)
+        raise
 
 
 def get_top_contributors(limit: int = 5) -> pd.DataFrame:
@@ -61,13 +69,15 @@ def get_top_contributors(limit: int = 5) -> pd.DataFrame:
         ORDER BY total_engagement DESC
         LIMIT :limit
     """)
-    with engine.connect() as conn:
-        df = pd.read_sql(query, conn, params={"limit": limit})
-
-    if not df.empty:
-        df.insert(0, "rank", range(1, len(df) + 1))
-
-    return df
+    try:
+        with engine.connect() as conn:
+            df = pd.read_sql(query, conn, params={"limit": limit})
+        if not df.empty:
+            df.insert(0, "rank", range(1, len(df) + 1))
+        return df
+    except Exception as e:
+        log.error("Failed to query top contributors: %s", e)
+        raise
 
 def get_most_active_days(limit: int = 10) -> pd.DataFrame:
     """Return the most active posting days by total post count."""
@@ -78,19 +88,26 @@ def get_most_active_days(limit: int = 10) -> pd.DataFrame:
         ORDER BY total_posts DESC, date ASC
         LIMIT :limit
     """)
-    with engine.connect() as conn:
-        return pd.read_sql(query, conn, params={"limit": limit})
+    try:
+        with engine.connect() as conn:
+            return pd.read_sql(query, conn, params={"limit": limit})
+    except Exception as e:
+        log.error("Failed to query most active days: %s", e)
+        raise
     
 def get_content_stats() -> pd.DataFrame:
     """Return daily average title and content lengths."""
     query = text("""
-        SELECT date,
-            avg_title_len, avg_content_len
+        SELECT date, avg_title_len, avg_content_len
         FROM analytics_content_stats
         ORDER BY date ASC
     """)
-    with engine.connect() as conn:
-        return pd.read_sql(query, conn)
+    try:
+        with engine.connect() as conn:
+            return pd.read_sql(query, conn)
+    except Exception as e:
+        log.error("Failed to query content stats: %s", e)
+        raise
 
 
 # -------------------------
@@ -121,42 +138,46 @@ def export_results(df: pd.DataFrame, filename: str) -> None:
 def run_analytics_queries() -> None:
     """Run all required analytics queries and optionally export results."""
     log.info("Running CommunityBoard analytics queries...")
-    ensure_output_dir()
+    try:
+        ensure_output_dir()
 
-    posts_per_category = get_posts_per_category()
-    activity_trends = get_activity_trends()
-    top_contributors = get_top_contributors(limit=5)
-    content_stats = get_content_stats()
-    most_active_days = get_most_active_days(limit=10)
+        posts_per_category = get_posts_per_category()
+        activity_trends = get_activity_trends()
+        top_contributors = get_top_contributors(limit=5)
+        content_stats = get_content_stats()
+        most_active_days = get_most_active_days(limit=10)
 
-    log.info("Posts per category rows: %d", len(posts_per_category))
-    log.info("Activity trends rows: %d", len(activity_trends))
-    log.info("Top contributors rows: %d", len(top_contributors))
-    log.info("Content stats rows: %d", len(content_stats))
-    log.info("Most active days rows: %d", len(most_active_days))
+        log.info("Posts per category rows: %d", len(posts_per_category))
+        log.info("Activity trends rows: %d", len(activity_trends))
+        log.info("Top contributors rows: %d", len(top_contributors))
+        log.info("Content stats rows: %d", len(content_stats))
+        log.info("Most active days rows: %d", len(most_active_days))
 
-    export_results(posts_per_category, "posts_per_category.csv")
-    export_results(activity_trends, "activity_trends.csv")
-    export_results(top_contributors, "top_contributors.csv")
-    export_results(content_stats, "content_stats.csv")
-    export_results(most_active_days, "most_active_days.csv") 
+        export_results(posts_per_category, "posts_per_category.csv")
+        export_results(activity_trends, "activity_trends.csv")
+        export_results(top_contributors, "top_contributors.csv")
+        export_results(content_stats, "content_stats.csv")
+        export_results(most_active_days, "most_active_days.csv") 
 
-    log.info("Analytics queries completed successfully.")
+        log.info("Analytics queries completed successfully.")
 
-    print("\nPosts per Category")
-    print(posts_per_category.to_string(index=False))
+        print("\nPosts per Category")
+        print(posts_per_category.to_string(index=False))
 
-    print("\nActivity Trends")
-    print(activity_trends.head(10).to_string(index=False))
+        print("\nActivity Trends")
+        print(activity_trends.head(10).to_string(index=False))
 
-    print("\nTop Contributors")
-    print(top_contributors.to_string(index=False))
+        print("\nTop Contributors")
+        print(top_contributors.to_string(index=False))
 
-    print("\nContent Stats")
-    print(content_stats.head(10).to_string(index=False))
+        print("\nContent Stats")
+        print(content_stats.head(10).to_string(index=False))
 
-    print("\nMost Active Days")
-    print(most_active_days.to_string(index=False)) 
+        print("\nMost Active Days")
+        print(most_active_days.to_string(index=False)) 
+    except Exception as e:
+        log.error("Analytics pipeline failed: %s", e)
+        raise
 
 if __name__ == "__main__":
     run_analytics_queries()
