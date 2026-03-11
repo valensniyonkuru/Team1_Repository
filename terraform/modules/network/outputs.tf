@@ -4,8 +4,13 @@ output "vpc_id" {
 }
 
 output "public_subnet_id" {
-  description = "Public subnet ID"
+  description = "Primary public subnet ID (AZ-a)"
   value       = aws_subnet.public.id
+}
+
+output "public_subnet_ids" {
+  description = "All public subnet IDs (AZ-a and AZ-b) — required for ALB"
+  value       = [aws_subnet.public.id, aws_subnet.public_b.id]
 }
 
 output "security_group_id" {
