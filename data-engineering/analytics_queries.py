@@ -56,9 +56,9 @@ def get_activity_trends() -> pd.DataFrame:
 def get_top_contributors(limit: int = 5) -> pd.DataFrame:
     """Return the top contributors ranked by total engagement."""
     query = text("""
-        SELECT author_name,  author_email, posts_created, comments_made, total_engagement
-        FROM analytics_user_engagement
-        ORDER BY total_engagement DESC, posts_created DESC, comments_made DESC, author_name ASC
+        SELECT author_name, author_email, posts_created, comments_made, total_engagement
+        FROM analytics_top_contributors
+        ORDER BY total_engagement DESC
         LIMIT :limit
     """)
     with engine.connect() as conn:
