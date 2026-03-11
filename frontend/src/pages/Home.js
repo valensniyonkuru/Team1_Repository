@@ -137,7 +137,7 @@ const PostCard = ({ title, body, category, author, time, commentCount }) => {
   const colors = CATEGORY_COLORS[category] || getDefaultColors();
 
   return (
-    <article className="bg-ping-bg border border-ping-stroke rounded-[14px] p-6 w-full font-inter">
+    <article className="bg-ping-bg border border-ping-stroke rounded-[14px] px-4 py-6 md:p-6 w-full font-inter">
       {/* Header: Title + Badge */}
       <div className="flex items-center justify-between gap-4">
         <h2 className="flex-1 text-xl font-semibold leading-[1.5] text-ping-heading">
@@ -267,9 +267,9 @@ const Home = () => {
     <div className="flex flex-col items-center w-full pt-12 pb-16 font-inter">
       <div className="flex flex-col gap-8 w-full max-w-[1201px] px-6 xl:px-0">
         {/* ── Search Bar + Create Post ──────────────────── */}
-        <div className="flex flex-wrap items-center justify-between w-full gap-4">
+        <div className="flex flex-col md:flex-row items-center justify-between w-full gap-4">
           {/* Search */}
-          <div className="flex items-center w-full max-w-[691px] gap-3">
+          <div className="flex items-center w-full md:max-w-[691px] gap-3">
             <div className="bg-ping-input-bg border border-ping-input-border rounded-lg px-4 py-3 flex-1 flex items-center gap-2.5">
               <SearchIcon />
               <input
@@ -296,7 +296,7 @@ const Home = () => {
           {/* Create post button */}
           <Link
             to="/create-post"
-            className="bg-ping-dark rounded-lg px-5 py-2.5 flex items-center justify-center gap-2 flex-shrink-0 transition-colors hover:bg-opacity-90 group"
+            className="w-full md:w-auto bg-ping-dark rounded-lg px-5 py-2.5 flex items-center justify-center gap-2 flex-shrink-0 transition-colors hover:bg-opacity-90 group"
           >
             <PlusIcon />
             <span className="font-medium text-sm text-ping-bg leading-[1.5]">
@@ -306,11 +306,11 @@ const Home = () => {
         </div>
 
         {/* ── Category Filters ─────────────────────────── */}
-        <div className="flex items-center gap-4 flex-wrap">
-          <span className="font-normal text-base text-ping-body-primary leading-[1.5]">
+        <div className="flex items-start md:items-center gap-4 flex-col md:flex-row w-full">
+          <span className="hidden md:inline-block font-normal text-base text-ping-body-primary leading-[1.5]">
             Categories:
           </span>
-          <div className="flex items-center gap-2.5 flex-wrap">
+          <div className="flex items-center gap-2.5 flex-wrap w-full md:w-auto">
             {categories.map((cat) => (
               <button
                 key={cat}

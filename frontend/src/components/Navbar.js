@@ -3,13 +3,31 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 const ChartIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#061c2a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="#061c2a"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
     <path d="M18 20V10M12 20V4M6 20v-6" />
   </svg>
 );
 
 const LogOutIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#c81e1e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="#c81e1e"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
     <polyline points="16 17 21 12 16 7" />
     <line x1="21" x2="9" y1="12" y2="12" />
@@ -17,8 +35,50 @@ const LogOutIcon = () => (
 );
 
 const PenIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#061c2a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="#061c2a"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
     <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+  </svg>
+);
+
+const BellIcon = () => (
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="#08283b"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+  </svg>
+);
+
+const HamburgerIcon = () => (
+  <svg
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="#08283b"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <line x1="3" y1="12" x2="21" y2="12" />
+    <line x1="3" y1="6" x2="21" y2="6" />
+    <line x1="3" y1="18" x2="21" y2="18" />
   </svg>
 );
 
@@ -38,10 +98,24 @@ const Navbar = () => {
   return (
     <nav className="flex items-center justify-between border-b border-ping-stroke bg-white px-6 py-2.5 sm:px-12 lg:px-[120px]">
       <Link to="/" className="shrink-0 transition-opacity hover:opacity-90">
-        <img src="/assets/Logo.svg" alt="Ping Logo" className="h-[38px] w-[100px]" />
+        <img
+          src="/assets/Logo.svg"
+          alt="Ping Logo"
+          className="h-[38px] w-[95px] md:w-[100px]"
+        />
       </Link>
 
-      <div className="flex items-center gap-5">
+      {/* Mobile Actions */}
+      <div className="flex items-center gap-5 md:hidden">
+        <button className="flex items-center justify-center p-1 relative">
+          <BellIcon />
+        </button>
+        <button className="flex items-center justify-center p-1">
+          <HamburgerIcon />
+        </button>
+      </div>
+
+      <div className="hidden md:flex items-center gap-5">
         {user ? (
           <>
             <div className="hidden sm:flex items-center gap-5">
@@ -50,14 +124,18 @@ const Navbar = () => {
                 className="flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 transition-colors hover:bg-gray-100"
               >
                 <ChartIcon />
-                <span className="font-inter text-sm font-medium text-[#061c2a]">Analytics</span>
+                <span className="font-inter text-sm font-medium text-[#061c2a]">
+                  Analytics
+                </span>
               </Link>
               <Link
                 to="/create-post"
                 className="flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 transition-colors hover:bg-gray-100"
               >
                 <PenIcon />
-                <span className="font-inter text-sm font-medium text-[#061c2a]">New Post</span>
+                <span className="font-inter text-sm font-medium text-[#061c2a]">
+                  New Post
+                </span>
               </Link>
             </div>
 
@@ -82,7 +160,9 @@ const Navbar = () => {
               className="flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 transition-colors hover:bg-ping-error-bg sm:px-5"
             >
               <LogOutIcon />
-              <span className="font-inter text-sm font-medium text-ping-error-text">Log out</span>
+              <span className="font-inter text-sm font-medium text-ping-error-text">
+                Log out
+              </span>
             </button>
           </>
         ) : (
