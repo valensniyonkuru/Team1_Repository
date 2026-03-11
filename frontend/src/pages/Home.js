@@ -140,11 +140,15 @@ const PostCard = ({ title, body, category, author, time, commentCount }) => {
     <article className="bg-ping-bg border border-ping-stroke rounded-[14px] px-4 py-6 md:p-6 w-full font-inter">
       {/* Header: Title + Badge */}
       <div className="flex items-center justify-between gap-4">
-        <h2 className="flex-1 text-xl font-semibold leading-[1.5] text-ping-heading">
+        <h2 
+          data-testid="post-title"
+          className="flex-1 text-xl font-semibold leading-[1.5] text-ping-heading"
+        >
           {title}
         </h2>
         {category && (
           <span
+            data-testid="post-category"
             className={`shrink-0 inline-flex items-center justify-center px-3 py-0.5 rounded-md border text-sm font-medium leading-[1.5] ${colors.bg} ${colors.border} ${colors.text}`}
           >
             {category}
@@ -153,7 +157,10 @@ const PostCard = ({ title, body, category, author, time, commentCount }) => {
       </div>
 
       {/* Body */}
-      <p className="mt-3 text-base font-normal leading-[1.5] text-ping-body line-clamp-2">
+      <p 
+        data-testid="post-content"
+        className="mt-3 text-base font-normal leading-[1.5] text-ping-body line-clamp-2"
+      >
         {body}
       </p>
 
