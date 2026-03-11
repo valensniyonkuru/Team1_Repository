@@ -12,7 +12,8 @@ services:
       POSTGRES_DB: ${DB_NAME:-communityboard}
       POSTGRES_USER: ${DB_USER:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
-    # No host port exposure — database is internal only
+    ports:
+      - "5432:5432"
     volumes:
       - pgdata-staging:/var/lib/postgresql/data
     networks:
