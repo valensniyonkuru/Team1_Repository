@@ -194,14 +194,13 @@ def run_pipeline() -> None:
         len(daily_activity), len(user_engagement), len(category_trends), len(content_stats)
     )
 
-    # Load
+    # Loading
     load_analytics(daily_activity, "analytics_daily_activity")
     load_analytics(user_engagement, "analytics_user_engagement")
     load_analytics(category_trends, "analytics_category_trends")
     load_analytics(content_stats, "analytics_content_stats")
 
     log.info("ETL pipeline complete!")
-
 
 if __name__ == "__main__":
     run_pipeline()
