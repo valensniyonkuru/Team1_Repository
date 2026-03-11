@@ -69,7 +69,18 @@ def get_top_contributors(limit: int = 5) -> pd.DataFrame:
 
     return df
 
-
+def get_most_active_days(limit: int = 10) -> pd.DataFrame:
+    """Return the most active posting days by total post count."""
+    query = text("""
+        SELECT date, SUM(post_count) AS total_posts
+        FROM analytics_daily_activity
+        GROUP BY date
+        ORDER BY total_posts DESC, date ASC
+        LIMIT :limit
+    """)
+    with engine.connect() as conn:
+        return pd.read_sql(query, conn, params={"limit": limit})
+    
 def get_content_stats() -> pd.DataFrame:
     """Return daily average title and content lengths."""
     query = text("""
@@ -116,16 +127,19 @@ def run_analytics_queries() -> None:
     activity_trends = get_activity_trends()
     top_contributors = get_top_contributors(limit=5)
     content_stats = get_content_stats()
+    most_active_days = get_most_active_days(limit=10)
 
     log.info("Posts per category rows: %d", len(posts_per_category))
     log.info("Activity trends rows: %d", len(activity_trends))
     log.info("Top contributors rows: %d", len(top_contributors))
     log.info("Content stats rows: %d", len(content_stats))
+    log.info("Most active days rows: %d", len(most_active_days))
 
     export_results(posts_per_category, "posts_per_category.csv")
     export_results(activity_trends, "activity_trends.csv")
     export_results(top_contributors, "top_contributors.csv")
     export_results(content_stats, "content_stats.csv")
+    export_results(most_active_days, "most_active_days.csv") 
 
     log.info("Analytics queries completed successfully.")
 
@@ -141,6 +155,8 @@ def run_analytics_queries() -> None:
     print("\nContent Stats")
     print(content_stats.head(10).to_string(index=False))
 
+    print("\nMost Active Days")
+    print(most_active_days.to_string(index=False)) 
 
 if __name__ == "__main__":
     run_analytics_queries()
