@@ -77,4 +77,10 @@ EOF
 
 systemctl daemon-reload
 
+# Set up Docker cleanup cron job — runs every Sunday at 2am
+# Removes dangling images and stopped containers to prevent disk exhaustion
+echo "0 2 * * 0 root docker system prune -af --filter 'until=168h' >> /var/log/communityboard/docker-cleanup.log 2>&1" \
+  > /etc/cron.d/docker-cleanup
+chmod 644 /etc/cron.d/docker-cleanup
+
 echo "Environment setup complete for ${ENVIRONMENT}"

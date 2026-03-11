@@ -31,21 +31,27 @@ provider "aws" {
 module "network" {
   source = "../../modules/network"
 
-  environment       = "staging"
-  vpc_cidr          = var.vpc_cidr
-  public_subnet_cidr = var.public_subnet_cidr
-  availability_zone = "${var.aws_region}a"
-  ssh_allowed_ip    = var.ssh_allowed_ip
+  environment          = "staging"
+  vpc_cidr             = var.vpc_cidr
+  public_subnet_cidr   = var.public_subnet_cidr
+  public_subnet_cidr_b = var.public_subnet_cidr_b
+  availability_zone    = "${var.aws_region}a"
+  availability_zone_b  = "${var.aws_region}b"
+  ssh_allowed_ip       = var.ssh_allowed_ip
 }
 
 module "ec2" {
   source = "../../modules/ec2"
 
-  environment      = "staging"
-  instance_type    = var.instance_type
-  root_volume_size = var.root_volume_size
-  subnet_id        = module.network.public_subnet_id
-  security_group_id = module.network.security_group_id
-  public_key       = var.public_key
+  environment        = "staging"
+  instance_type      = var.instance_type
+  root_volume_size   = var.root_volume_size
+  vpc_id             = module.network.vpc_id
+  subnet_ids         = module.network.public_subnet_ids
+  security_group_id  = module.network.security_group_id
+  public_key         = var.public_key
   log_retention_days = var.log_retention_days
+  asg_desired        = var.asg_desired
+  asg_min            = var.asg_min
+  asg_max            = var.asg_max
 }

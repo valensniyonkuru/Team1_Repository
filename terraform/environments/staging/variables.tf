@@ -11,9 +11,15 @@ variable "vpc_cidr" {
 }
 
 variable "public_subnet_cidr" {
-  description = "Public subnet CIDR block"
+  description = "CIDR block for public subnet AZ-a"
   type        = string
   default     = "10.0.1.0/24"
+}
+
+variable "public_subnet_cidr_b" {
+  description = "CIDR block for public subnet AZ-b (required for ALB)"
+  type        = string
+  default     = "10.0.2.0/24"
 }
 
 variable "instance_type" {
@@ -44,4 +50,22 @@ variable "log_retention_days" {
   description = "CloudWatch log retention in days"
   type        = number
   default     = 14
+}
+
+variable "asg_desired" {
+  description = "Desired number of instances in the ASG"
+  type        = number
+  default     = 1
+}
+
+variable "asg_min" {
+  description = "Minimum number of instances in the ASG"
+  type        = number
+  default     = 1
+}
+
+variable "asg_max" {
+  description = "Maximum number of instances in the ASG"
+  type        = number
+  default     = 3
 }
