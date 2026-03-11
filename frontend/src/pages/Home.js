@@ -242,8 +242,9 @@ const Home = () => {
     postAPI
       .getAll(currentPage - 1, 10)
       .then((res) => {
-        setPosts(res.data.content || []);
-        setTotalPages(res.data.totalPages || 1);
+        const payload = res.data.data || res.data;
+        setPosts(payload.content || []);
+        setTotalPages(payload.totalPages || 1);
       })
       .catch((err) => console.error("Failed to load posts", err))
       .finally(() => setLoading(false));

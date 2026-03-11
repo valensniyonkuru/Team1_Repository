@@ -60,7 +60,7 @@ def clear_existing_data(conn: Connection) -> None:
 def upsert_users(conn: Connection, n_users: int) -> List[int]:
     """Insert or update users by unique email; returns all user IDs."""
     users = []
-    BCRYPT_PASSWORD = "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy"  # password123
+    BCRYPT_PASSWORD = "$2a$10$IXHfyQSclupPXbqi7RbAW..j8/ZU8WkwyoQHtZiHRfjnsjCBlVE5u"  # Password123!
 
     # Always include known accounts for testing
     fixed_users = [
@@ -69,7 +69,7 @@ def upsert_users(conn: Connection, n_users: int) -> List[int]:
             "name": "Admin User",
             "password": BCRYPT_PASSWORD,
             "role": "ADMIN",
-            "auth_provider": "LOCAL",
+            "auth_provider": "MANUAL",
             "google_id": None,
             "email_verified": True,
             "account_locked": False,
@@ -83,7 +83,7 @@ def upsert_users(conn: Connection, n_users: int) -> List[int]:
             "name": "Test User",
             "password": BCRYPT_PASSWORD,
             "role": "USER",
-            "auth_provider": "LOCAL",
+            "auth_provider": "MANUAL",
             "google_id": None,
             "email_verified": True,
             "account_locked": False,
@@ -108,7 +108,7 @@ def upsert_users(conn: Connection, n_users: int) -> List[int]:
                 "name": fake.name(),
                 "password": BCRYPT_PASSWORD,
                 "role": "USER",
-                "auth_provider": "LOCAL",
+                "auth_provider": "MANUAL",
                 "google_id": None,
                 "email_verified": True,
                 "account_locked": False,
@@ -119,14 +119,19 @@ def upsert_users(conn: Connection, n_users: int) -> List[int]:
             }
         )
 
+    # Fetch IDs explicitly since tables lack DEFAULT nextval()
+    user_ids = [r[0] for r in conn.execute(text(f"SELECT nextval('users_seq') FROM generate_series(1, {len(users)})")).fetchall()]
+    for i, user in enumerate(users):
+        user["id"] = user_ids[i]
+
     sql = text("""
         INSERT INTO users (
-            email, name, password, role,
-            "authProvider", "googleId", "emailVerified", "accountLocked",
-            "tokenVersion", "deletedAt", "createdAt", "updatedAt"
+            id, email, name, password, role,
+            auth_provider, google_id, email_verified, account_locked,
+            token_version, deleted_at, created_at, updated_at
         )
         VALUES (
-            :email, :name, :password, :role,
+            :id, :email, :name, :password, :role,
             :auth_provider, :google_id, :email_verified, :account_locked,
             :token_version, :deleted_at, :created_at, :updated_at
         )
@@ -134,13 +139,13 @@ def upsert_users(conn: Connection, n_users: int) -> List[int]:
             name = EXCLUDED.name,
             password = EXCLUDED.password,
             role = EXCLUDED.role,
-            "authProvider" = EXCLUDED."authProvider",
-            "googleId" = EXCLUDED."googleId",
-            "emailVerified" = EXCLUDED."emailVerified",
-            "accountLocked" = EXCLUDED."accountLocked",
-            "tokenVersion" = EXCLUDED."tokenVersion",
-            "deletedAt" = EXCLUDED."deletedAt",
-            "updatedAt" = EXCLUDED."updatedAt"
+            auth_provider = EXCLUDED.auth_provider,
+            google_id = EXCLUDED.google_id,
+            email_verified = EXCLUDED.email_verified,
+            account_locked = EXCLUDED.account_locked,
+            token_version = EXCLUDED.token_version,
+            deleted_at = EXCLUDED.deleted_at,
+            updated_at = EXCLUDED.updated_at
     """)
 
     for row in users:
@@ -252,6 +257,11 @@ def insert_posts(conn: Connection, user_ids: List[int], category_ids: List[int],
                 "category_id": category_id,
             }
         )
+
+    seq_records = conn.execute(text(f"SELECT nextval('posts_seq') FROM generate_series(1, {len(posts)})")).fetchall()
+    post_ids = [r[0] for r in seq_records]
+    for i, post in enumerate(posts):
+        post["id"] = post_ids[i]
 
     df = pd.DataFrame(posts)
     df.to_sql("posts", conn, if_exists="append", index=False, method="multi")
