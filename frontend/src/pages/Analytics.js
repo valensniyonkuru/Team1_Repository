@@ -1,167 +1,11 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { Link } from "react-router-dom";
-import { postAPI } from "../services/api";
+import React from "react";
+import { useAnalytics, CATEGORY_ORDER, DAY_ORDER } from "../hooks/useAnalytics";
+import BarChart from "../components/BarChart";
+import Breadcrumb from "../components/Breadcrumb";
+import { TrendingUpIcon, MessageCircleIcon } from "../components/icons";
 
-// --- Icons ---
-const HomeIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-    <polyline points="9 22 9 12 15 12 15 22" />
-  </svg>
-);
-
-const ChevronRight = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#b2bcc2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="9 18 15 12 9 6" />
-  </svg>
-);
-
-const TrendingUpIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#08283b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
-    <polyline points="16 7 22 7 22 13" />
-  </svg>
-);
-
-const MessageCircleIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#08283b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />
-    <path d="M8 12h.01M12 12h.01M16 12h.01" />
-  </svg>
-);
-
-// --- Constants ---
-const CATEGORY_ORDER = ["Events", "Help Requests", "Lost & Found", "Recommendations"];
-const DAY_ORDER = ["Mon", "Tues", "Wed", "Thurs", "Fri", "Sat", "Sun"];
-// getDay() → 0=Sun,1=Mon,...,6=Sat
-const DAY_INDEX_MAP = { 0: "Sun", 1: "Mon", 2: "Tues", 3: "Wed", 4: "Thurs", 5: "Fri", 6: "Sat" };
-
-const BAR_AREA_HEIGHT = 180; // px — matches Figma's ~178px usable bar area
-
-// --- Bar Chart ---
-function BarChart({ bars, xLabels }) {
-  const maxVal = Math.max(...bars, 1);
-  const step = Math.max(Math.ceil(maxVal / 4), 1);
-  const yMax = step * 4;
-  const yTicks = [yMax, step * 3, step * 2, step, 0];
-
-  return (
-    <div className="flex gap-[16px] items-start w-full">
-      {/* Y-axis labels */}
-      <div
-        className="flex flex-col justify-between shrink-0 w-5 text-right"
-        style={{ height: `${BAR_AREA_HEIGHT}px` }}
-      >
-        {yTicks.map((t) => (
-          <span key={t} className="text-[12px] font-inter text-ping-placeholder leading-none">
-            {t}
-          </span>
-        ))}
-      </div>
-
-      {/* Chart + X labels */}
-      <div className="flex-1 flex flex-col gap-[8px] min-w-0">
-        {/* Bar area */}
-        <div className="relative w-full" style={{ height: `${BAR_AREA_HEIGHT}px` }}>
-          {/* Dashed grid lines (skip the 0 line) */}
-          {yTicks.slice(0, -1).map((t) => (
-            <div
-              key={t}
-              className="absolute left-0 right-0 border-t border-dashed border-ping-stroke"
-              style={{ bottom: `${Math.round((t / yMax) * BAR_AREA_HEIGHT)}px` }}
-            />
-          ))}
-          {/* Bars */}
-          <div className="absolute inset-x-0 bottom-0 top-0 flex items-end justify-between gap-[8px]">
-            {bars.map((val, i) => (
-              <div
-                key={i}
-                className="bg-ping-body rounded-t-[2px] flex-1"
-                style={{
-                  height: `${Math.max(Math.round((val / yMax) * BAR_AREA_HEIGHT), val > 0 ? 2 : 0)}px`,
-                }}
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* X-axis labels */}
-        <div className="flex justify-between gap-[8px]">
-          {xLabels.map((label, i) => (
-            <span
-              key={i}
-              className="text-[12px] font-inter text-ping-placeholder text-center leading-[1.5] flex-1 min-w-0"
-            >
-              {label}
-            </span>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// --- Analytics Page ---
 const Analytics = () => {
-  const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  const fetchAnalytics = useCallback(async () => {
-    try {
-      setLoading(true);
-      const res = await postAPI.getAll(0, 500);
-      const payload = res.data?.data || res.data;
-      const posts = payload?.content || (Array.isArray(payload) ? payload : []);
-      const totalPosts = payload?.totalElements ?? posts.length;
-
-      // Total comments from commentCount field on each post
-      const totalComments = posts.reduce((sum, p) => sum + (p.commentCount ?? 0), 0);
-
-      // Posts by category
-      const catCounts = {};
-      CATEGORY_ORDER.forEach((c) => (catCounts[c] = 0));
-      posts.forEach((p) => {
-        const cat = p.categoryName;
-        if (cat) catCounts[cat] = (catCounts[cat] ?? 0) + 1;
-      });
-
-      // Posts by day of week
-      const dayCounts = {};
-      DAY_ORDER.forEach((d) => (dayCounts[d] = 0));
-      posts.forEach((p) => {
-        if (p.createdAt) {
-          const dayLabel = DAY_INDEX_MAP[new Date(p.createdAt).getDay()];
-          if (dayLabel) dayCounts[dayLabel] = (dayCounts[dayLabel] ?? 0) + 1;
-        }
-      });
-
-      // Top 10 contributors by post count
-      const authorCounts = {};
-      posts.forEach((p) => {
-        if (p.authorName) authorCounts[p.authorName] = (authorCounts[p.authorName] ?? 0) + 1;
-      });
-      const topContributors = Object.entries(authorCounts)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 10)
-        .map(([name, count]) => ({ name, count }));
-
-      setStats({
-        totalPosts,
-        totalComments,
-        catBars: CATEGORY_ORDER.map((c) => catCounts[c]),
-        dayBars: DAY_ORDER.map((d) => dayCounts[d]),
-        topContributors,
-      });
-    } catch (err) {
-      console.error("Failed to load analytics:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchAnalytics();
-  }, [fetchAnalytics]);
+  const { stats, loading } = useAnalytics();
 
   if (loading) {
     return (
@@ -175,19 +19,7 @@ const Analytics = () => {
     <div className="bg-ping-bg min-h-screen">
       <div className="max-w-[1440px] mx-auto px-[16px] md:px-[20px] lg:px-[120px] pt-[84px] pb-[120px] flex flex-col gap-[64px]">
 
-        {/* Breadcrumb */}
-        <div className="flex items-center gap-[16px] bg-ping-bg border border-ping-stroke py-[12px] px-[20px] rounded-[8px] w-fit">
-          <Link to="/" className="text-ping-dark hover:opacity-70 transition-opacity flex items-center justify-center">
-            <HomeIcon />
-          </Link>
-          <div className="flex items-center gap-[8px]">
-            <Link to="/" className="text-[14px] font-medium font-inter text-ping-dark hover:underline">
-              Home
-            </Link>
-            <ChevronRight />
-            <span className="text-[14px] font-medium font-inter text-ping-dark">Analytics</span>
-          </div>
-        </div>
+        <Breadcrumb items={[{ label: "Home", to: "/" }, { label: "Analytics" }]} />
 
         <div className="flex flex-col gap-[32px] w-full">
 

@@ -1,85 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { postAPI, categoryAPI } from "../services/api";
-
-/* ─── SVG Icon Components ──────────────────────────────────── */
-
-const CloseIcon = () => (
-  <svg
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="#08283b"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M18 6 6 18M6 6l12 12" />
-  </svg>
-);
-
-const ChevronDownIcon = () => (
-  <svg
-    width="16"
-    height="16"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="#5a6f7c"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="m6 9 6 6 6-6" />
-  </svg>
-);
-
-const HomeIcon = () => (
-  <svg
-    width="20"
-    height="20"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="#08283b"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-    <polyline points="9 22 9 12 15 12 15 22" />
-  </svg>
-);
-
-const ChevronRightIcon = () => (
-  <svg
-    width="20"
-    height="20"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="#08283b"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <polyline points="9 18 15 12 9 6" />
-  </svg>
-);
-
-const HamburgerIcon = () => (
-  <svg
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="#08283b"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <line x1="3" y1="12" x2="21" y2="12" />
-    <line x1="3" y1="6" x2="21" y2="6" />
-    <line x1="3" y1="18" x2="21" y2="18" />
-  </svg>
-);
+import { CloseIcon, ChevronDown, HomeIcon, ChevronRight, HamburgerIcon } from "../components/icons";
 
 /* ─── Create Post Modal Component ────────────────────────── */
 
@@ -171,7 +92,7 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
               <HomeIcon />
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium text-ping-dark">Home</span>
-                <ChevronRightIcon />
+                <ChevronRight color="#08283b" />
                 <span className="text-sm font-medium text-ping-dark">Create Post</span>
               </div>
             </div>
@@ -228,7 +149,7 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
                 <span className={selectedCategory ? "text-ping-body" : "text-ping-placeholder"}>
                   {selectedCategory ? selectedCategory.name : "Select"}
                 </span>
-                <ChevronDownIcon />
+                <ChevronDown />
               </button>
               
               {isDropdownOpen && (
