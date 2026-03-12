@@ -109,7 +109,19 @@ def get_content_stats() -> pd.DataFrame:
         log.error("Failed to query content stats: %s", e)
         raise
 
-
+def get_posts_by_day_of_week() -> pd.DataFrame:
+    """Return post counts grouped by day of week."""
+    query = text("""
+        SELECT day_of_week, post_count
+        FROM analytics_posts_day_of_week
+        ORDER BY post_count DESC
+    """)
+    try:
+        with engine.connect() as conn:
+            return pd.read_sql(query, conn)
+    except Exception as e:
+        log.error("Failed to query posts by day of week: %s", e)
+        raise
 # -------------------------
 # Export helpers
 # -------------------------
@@ -143,21 +155,24 @@ def run_analytics_queries() -> None:
 
         posts_per_category = get_posts_per_category()
         activity_trends = get_activity_trends()
-        top_contributors = get_top_contributors(limit=5)
+        top_contributors = get_top_contributors(limit=10)
         content_stats = get_content_stats()
         most_active_days = get_most_active_days(limit=10)
+        posts_day_of_week = get_posts_by_day_of_week()
 
         log.info("Posts per category rows: %d", len(posts_per_category))
         log.info("Activity trends rows: %d", len(activity_trends))
         log.info("Top contributors rows: %d", len(top_contributors))
         log.info("Content stats rows: %d", len(content_stats))
         log.info("Most active days rows: %d", len(most_active_days))
+        log.info("Posts by daays of the week: %d", len(posts_day_of_week))
 
         export_results(posts_per_category, "posts_per_category.csv")
         export_results(activity_trends, "activity_trends.csv")
         export_results(top_contributors, "top_contributors.csv")
         export_results(content_stats, "content_stats.csv")
         export_results(most_active_days, "most_active_days.csv") 
+        export_results(posts_day_of_week, "posts_day_of_week.csv")
 
         log.info("Analytics queries completed successfully.")
 
@@ -175,6 +190,9 @@ def run_analytics_queries() -> None:
 
         print("\nMost Active Days")
         print(most_active_days.to_string(index=False)) 
+
+        print("\nPosts per day of the week")
+        print(posts_day_of_week.to_string(index=False))
     except Exception as e:
         log.error("Analytics pipeline failed: %s", e)
         raise
