@@ -50,17 +50,23 @@ def ensure_categories(conn: Connection) -> List[int]:
     ]
 
     # Inspect category table columns
-    cols = conn.execute(text("""
-        SELECT column_name
-        FROM information_schema.columns
-        WHERE table_name = 'categories'
-        ORDER BY ordinal_position
-    """)).fetchall()
-    col_names = {r[0] for r in cols}
-
+    col_names = {
+        r[0] for r in conn.execute(text("""
+            SELECT column_name FROM information_schema.columns
+            WHERE table_name = 'categories'
+        """)).fetchall()
+    }
     has_description = "description" in col_names
 
-    for category_id, name, description in required:
+    # Get existing names
+    existing_names = {
+        r[0] for r in conn.execute(text("SELECT name FROM categories;")).fetchall()
+    }
+
+    # insert missing missing categories
+    missing = [(cid, name, desc) for cid, name, desc in required if name not in existing_names]
+
+    if missing:
         if has_description:
             conn.execute(
                 text("""
@@ -70,27 +76,21 @@ def ensure_categories(conn: Connection) -> List[int]:
                         name = EXCLUDED.name,
                         description = EXCLUDED.description
                 """),
-                {
-                    "id": category_id,
-                    "name": name,
-                    "description": description,
-                },
+                [{"id": cid, "name": name, "description": desc} for cid, name, desc in missing],
             )
         else:
             conn.execute(
                 text("""
                     INSERT INTO categories (id, name)
                     VALUES (:id, :name)
-                    ON CONFLICT (id) DO UPDATE SET
-                        name = EXCLUDED.name
+                    ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name
                 """),
-                {
-                    "id": category_id,
-                    "name": name,
-                },
+                [{"id": cid, "name": name} for cid, name, _ in missing],
             )
 
-    rows = conn.execute(text("SELECT id FROM categories ORDER BY id;")).fetchall()
+    rows = conn.execute(
+        text("SELECT id FROM categories WHERE name IN ('NEWS', 'EVENT', 'DISCUSSION', 'ALERT') ORDER BY id;")
+    ).fetchall()
     ids = [r[0] for r in rows]
 
     if not ids:
@@ -304,12 +304,10 @@ def insert_posts(conn: Connection, user_ids: List[int], category_ids: List[int],
             }
         )
 
-    seq_records = conn.execute(text(f"SELECT nextval('posts_seq') FROM generate_series(1, {len(posts)})")).fetchall()
-    post_ids = [r[0] for r in seq_records]
-    for i, post in enumerate(posts):
-        post["id"] = post_ids[i]
+    post_ids = [r[0] for r in conn.execute(text(f"SELECT nextval('posts_seq') FROM generate_series(1, {len(posts)})")).fetchall()]
 
     df = pd.DataFrame(posts)
+    df.insert(0, "id", post_ids)
     df.to_sql("posts", conn, if_exists="append", index=False, method="multi")
 
     return post_ids
