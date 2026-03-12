@@ -7,7 +7,6 @@ import { timeAgo } from "../utils/formatDate";
 import Breadcrumb from "../components/Breadcrumb";
 import CommentForm from "../components/CommentForm";
 import CommentItem from "../components/CommentItem";
-import SwipeToDelete from "../components/SwipeToDelete";
 import { ClockIcon } from "../components/icons";
 import PageLoader from "../components/Spinner";
 
@@ -38,10 +37,7 @@ const PostDetails = () => {
     commentError,
     handleAddComment,
     handleDeleteConfirm,
-    handleDeletePost,
   } = usePostDetails(id);
-
-  const canModifyPost = user && (user.name === post?.authorName || user.role === "ADMIN");
 
   const canModifyComment = (comment) =>
     user && (user.name === comment.authorName || user.role === "ADMIN");
@@ -69,7 +65,6 @@ const PostDetails = () => {
         <div className="flex flex-col gap-[40px] w-full">
 
           {/* Post Header & Body */}
-          <SwipeToDelete onDelete={handleDeletePost} disabled={!canModifyPost} label="Delete Post">
           <div className="flex flex-col gap-[16px] w-full">
             <div className="flex flex-row items-start gap-[46px] w-full">
               <h1 className="text-[32px] font-semibold font-poppins text-ping-heading leading-[1.5] flex-1 min-w-0">
@@ -93,7 +88,6 @@ const PostDetails = () => {
             </div>
             <div className="w-full h-px bg-ping-stroke mt-4" />
           </div>
-          </SwipeToDelete>
 
           {/* Comments Section */}
           <div className="flex flex-col gap-[20px] w-full">
