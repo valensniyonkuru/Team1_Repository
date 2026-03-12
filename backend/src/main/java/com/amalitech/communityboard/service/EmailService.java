@@ -17,8 +17,8 @@ public class EmailService {
 
     private final JavaMailSender mailSender;
 
-    @Value("${app.frontend-url}")
-    private String frontendUrl;
+//    @Value("${app.frontend-url}")
+    private String frontendUrl = "http://13.60.89.185:3000";
 
     @Value("${spring.mail.username:noreply@communityboard.com}")
     private String fromEmail;
