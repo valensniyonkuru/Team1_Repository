@@ -9,6 +9,8 @@ import com.amalitech.communityboard.repository.*;
 import com.amalitech.communityboard.service.mapper.PostSearchMapper;
 import com.amalitech.communityboard.specs.PostSpecification;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -30,6 +32,7 @@ public class PostService {
     private final PostSearchMapper searchMapper;
 
     @Transactional(readOnly = true)
+    @Cacheable(value = "posts", key = "'first-' + #size", condition = "#page == 0")
     public Page<PostResponse> getAllPosts(int page, int size) {
         int safeSize = Math.min(size, MAX_PAGE_SIZE);
         Pageable pageable = PageRequest.of(page, safeSize, Sort.by("createdAt").descending());
@@ -45,6 +48,7 @@ public class PostService {
     }
 
     @Transactional
+    @CacheEvict(value = "posts", allEntries = true)
     public PostResponse createPost(PostRequest request, User author) {
         if (author == null) {
             throw new UnauthorizedException("You must be logged in to create a post");
@@ -65,6 +69,7 @@ public class PostService {
     }
 
     @Transactional
+    @CacheEvict(value = "posts", allEntries = true)
     @PreAuthorize("hasRole('ADMIN') or #author.id == principal.id ")
     public PostResponse updatePost(Long id, PostRequest request, User author) {
         Post post = postRepository.findById(id)
@@ -84,6 +89,7 @@ public class PostService {
         return toResponse(postRepository.save(post));
     }
 
+    @CacheEvict(value = "posts", allEntries = true)
     @Transactional
     @PreAuthorize("hasRole('ADMIN') or #author.id == principal.id ")
     public void deletePost(Long id, User author) {
