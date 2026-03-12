@@ -25,12 +25,57 @@ resource "aws_key_pair" "deployer" {
   }
 }
 
+# IAM Role — allows EC2 instances to use SSM (no SSH needed for deploys)
+resource "aws_iam_role" "ec2_ssm" {
+  name = "${var.environment}-ec2-ssm-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action    = "sts:AssumeRole"
+      Effect    = "Allow"
+      Principal = { Service = "ec2.amazonaws.com" }
+    }]
+  })
+
+  tags = {
+    Name        = "${var.environment}-ec2-ssm-role"
+    Environment = var.environment
+  }
+}
+
+# Attach AWS managed policy for SSM core functionality
+resource "aws_iam_role_policy_attachment" "ssm_core" {
+  role       = aws_iam_role.ec2_ssm.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
+# Attach CloudWatch agent policy for log shipping
+resource "aws_iam_role_policy_attachment" "cloudwatch_agent" {
+  role       = aws_iam_role.ec2_ssm.name
+  policy_arn = "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
+}
+
+# Instance profile wraps the IAM role so EC2 can use it
+resource "aws_iam_instance_profile" "ec2_ssm" {
+  name = "${var.environment}-ec2-ssm-profile"
+  role = aws_iam_role.ec2_ssm.name
+
+  tags = {
+    Name        = "${var.environment}-ec2-ssm-profile"
+    Environment = var.environment
+  }
+}
+
 # Launch Template — used by the Auto Scaling Group
 resource "aws_launch_template" "app" {
-  name_prefix   = "${var.environment}-app-lt-"
-  image_id      = data.aws_ami.ubuntu.id
-  instance_type = var.instance_type
-  key_name      = aws_key_pair.deployer.key_name
+  name_prefix            = "${var.environment}-app-lt-"
+  image_id               = data.aws_ami.ubuntu.id
+  instance_type          = var.instance_type
+  key_name               = aws_key_pair.deployer.key_name
+  iam_instance_profile {
+    arn = aws_iam_instance_profile.ec2_ssm.arn
+  }
 
   user_data = base64encode(templatefile("${path.module}/user_data.sh", {
     ENVIRONMENT = var.environment
