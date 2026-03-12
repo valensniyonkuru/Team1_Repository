@@ -5,10 +5,14 @@ import PostCard from "../components/PostCard";
 import Pagination from "../components/Pagination";
 import { timeAgo } from "../utils/formatDate";
 import { SearchIcon, CloseIcon, PlusIcon } from "../components/icons";
+import PageLoader from "../components/Spinner";
+import SwipeToDelete from "../components/SwipeToDelete";
+import { useAuth } from "../context/AuthContext";
 
 const PAGE_SIZE = 10;
 
 const Home = () => {
+  const { user } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   // Server-paged posts (normal mode)
   const [posts, setPosts] = useState([]);
@@ -77,6 +81,15 @@ const Home = () => {
       .finally(() => setLoading(false));
   }, [currentPage]);
 
+  const handleDeletePost = useCallback(async (postId) => {
+    try {
+      await postAPI.delete(postId);
+      fetchPosts();
+    } catch (err) {
+      console.error("Failed to delete post", err);
+    }
+  }, [fetchPosts]);
+
   // Run server-page fetch only when not in date-filter mode
   useEffect(() => {
     if (!isDateFiltered) fetchPosts();
@@ -123,11 +136,7 @@ const Home = () => {
   };
 
   if (loading && !isDateFiltered) {
-    return (
-      <div className="mt-8 flex items-center justify-center min-h-[50vh]">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-ping-dark border-t-transparent" />
-      </div>
-    );
+    return <PageLoader className="mt-8 min-h-[50vh]" />;
   }
 
   let postsContent;
@@ -155,16 +164,22 @@ const Home = () => {
       <div className="flex flex-col gap-6 items-end w-full">
         <div className="flex flex-col gap-6 w-full">
           {displayedPosts.map((post) => (
-            <PostCard
+            <SwipeToDelete
               key={post.id}
-              id={post.id}
-              title={post.title}
-              body={post.content}
-              category={post.categoryName}
-              author={post.authorName}
-              time={timeAgo(post.createdAt)}
-              commentCount={post.commentCount ?? 0}
-            />
+              onDelete={() => handleDeletePost(post.id)}
+              disabled={!user || (user.name !== post.authorName && user.role !== "ADMIN")}
+              label="Delete Post"
+            >
+              <PostCard
+                id={post.id}
+                title={post.title}
+                body={post.content}
+                category={post.categoryName}
+                author={post.authorName}
+                time={timeAgo(post.createdAt)}
+                commentCount={post.commentCount ?? 0}
+              />
+            </SwipeToDelete>
           ))}
         </div>
         {effectiveTotalPages > 1 && (
