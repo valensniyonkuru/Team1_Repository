@@ -46,7 +46,7 @@ const EmailVerificationPrompt = ({ email, resendStatus, onResend }) => (
       )}
       <button
         onClick={onResend}
-        disabled={resendStatus === "sending" || resendStatus === "sent"}
+        disabled={resendStatus === "sending"}
         className="w-full rounded-lg border border-ping-stroke bg-white py-2.5 font-inter text-sm font-medium text-ping-body-primary transition-colors hover:bg-ping-bg disabled:opacity-50"
       >
         {resendStatus === "sending" ? "Sending..." : "Resend verification email"}
