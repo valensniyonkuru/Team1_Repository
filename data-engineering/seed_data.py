@@ -99,12 +99,10 @@ def ensure_categories(conn: Connection) -> List[int]:
 
 
 def clear_existing_data(conn: Connection) -> None:
-    """Truncate users/posts/comments to get a clean, repeatable seed run."""
+    """Truncate posts/comments to get a clean, repeatable seed run."""
     # Order matters due to foreign keys
     conn.execute(text("TRUNCATE TABLE comments RESTART IDENTITY CASCADE;"))
     conn.execute(text("TRUNCATE TABLE posts RESTART IDENTITY CASCADE;"))
-    conn.execute(text("TRUNCATE TABLE users RESTART IDENTITY CASCADE;"))
-
 
 def upsert_users(conn: Connection, n_users: int) -> List[int]:
     """Insert or update users by unique email; returns all user IDs."""
@@ -197,7 +195,6 @@ def upsert_users(conn: Connection, n_users: int) -> List[int]:
             google_id = EXCLUDED.google_id,
             email_verified = EXCLUDED.email_verified,
             account_locked = EXCLUDED.account_locked,
-            token_version = EXCLUDED.token_version,
             deleted_at = EXCLUDED.deleted_at,
             updated_at = EXCLUDED.updated_at
     """)
@@ -383,7 +380,7 @@ def main() -> None:
         category_ids = ensure_categories(conn)
 
         if SEED_RESET:
-            log.info("SEED_RESET=1 -> truncating users/posts/comments for a clean seed run...")
+            log.info("SEED_RESET=1 -> truncating posts/comments for a clean seed run...")
             clear_existing_data(conn)
         else:
             log.info("SEED_RESET=0 -> appending (no truncation). Users will UPSERT by email.")
