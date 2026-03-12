@@ -25,6 +25,9 @@ API.interceptors.request.use((config) => {
   return config;
 });
 
+// Singleton promise to prevent concurrent token refresh calls
+let refreshPromise = null;
+
 // Response interceptor for catching 401s and refreshing tokens
 API.interceptors.response.use(
   (response) => response,
@@ -36,13 +39,19 @@ API.interceptors.response.use(
       originalRequest._retry = true;
       
       try {
-        const refreshToken = localStorage.getItem("refreshToken");
-        if (!refreshToken) {
-          throw new Error("No refresh token available");
+        if (!refreshPromise) {
+          const refreshToken = localStorage.getItem("refreshToken");
+          if (!refreshToken) {
+            throw new Error("No refresh token available");
+          }
+
+          // Call refresh endpoint directly using axios (to avoid infinite interceptor loops)
+          refreshPromise = axios
+            .post("/api/auth/refresh", { refreshToken })
+            .finally(() => { refreshPromise = null; });
         }
 
-        // Call refresh endpoint directly using axios (to avoid infinite interceptor loops)
-        const res = await axios.post("/api/auth/refresh", { refreshToken });
+        const res = await refreshPromise;
         
         const payload = res.data.data || res.data;
         const newAccessToken = payload.accessToken;

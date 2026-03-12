@@ -11,7 +11,11 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const savedUser = localStorage.getItem("user");
     if (savedUser && token) {
-      setUser(JSON.parse(savedUser));
+      try {
+        setUser(JSON.parse(savedUser));
+      } catch {
+        localStorage.removeItem("user");
+      }
     }
   }, [token]);
 

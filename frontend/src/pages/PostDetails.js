@@ -31,16 +31,10 @@ const PostDetails = () => {
     commentContent,
     setCommentContent,
     submitting,
-    editingCommentId,
-    editingContent,
-    setEditingContent,
     deletingCommentId,
     setDeletingCommentId,
     commentError,
     handleAddComment,
-    handleEditStart,
-    handleEditCancel,
-    handleEditSave,
     handleDeleteConfirm,
   } = usePostDetails(id);
 
@@ -126,20 +120,14 @@ const PostDetails = () => {
                   {comments.map((comment, index) => (
                     <React.Fragment key={comment.id}>
                       <CommentItem
-                        comment={comment}
-                        canModify={canModifyComment(comment)}
-                        isEditing={editingCommentId === comment.id}
-                        editingContent={editingContent}
-                        onEditingContentChange={setEditingContent}
-                        onEditStart={handleEditStart}
-                        onEditSave={handleEditSave}
-                        onEditCancel={handleEditCancel}
-                        deletingId={deletingCommentId}
-                        onDeleteRequest={setDeletingCommentId}
-                        onDeleteConfirm={handleDeleteConfirm}
-                        onDeleteCancel={() => setDeletingCommentId(null)}
-                        formatDate={formatDate}
-                      />
+                          comment={comment}
+                          canModify={canModifyComment(comment)}
+                          deletingId={deletingCommentId}
+                          onDeleteRequest={setDeletingCommentId}
+                          onDeleteConfirm={handleDeleteConfirm}
+                          onDeleteCancel={() => setDeletingCommentId(null)}
+                          formatDate={formatDate}
+                        />
                       {index < comments.length - 1 && (
                         <div className="w-full h-px bg-ping-stroke" />
                       )}

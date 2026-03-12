@@ -9,8 +9,6 @@ export function usePostDetails(id) {
   const [loading, setLoading] = useState(true);
   const [commentContent, setCommentContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [editingCommentId, setEditingCommentId] = useState(null);
-  const [editingContent, setEditingContent] = useState("");
   const [deletingCommentId, setDeletingCommentId] = useState(null);
   const [commentError, setCommentError] = useState("");
 
@@ -56,30 +54,6 @@ export function usePostDetails(id) {
     }
   };
 
-  const handleEditStart = (comment) => {
-    setEditingCommentId(comment.id);
-    setEditingContent(comment.content);
-  };
-
-  const handleEditCancel = () => {
-    setEditingCommentId(null);
-    setEditingContent("");
-  };
-
-  const handleEditSave = async (commentId) => {
-    if (!editingContent.trim()) return;
-    try {
-      await commentAPI.update(id, commentId, { content: editingContent });
-      setComments((prev) =>
-        prev.map((c) => (c.id === commentId ? { ...c, content: editingContent.trim() } : c))
-      );
-      setEditingCommentId(null);
-      setEditingContent("");
-    } catch (err) {
-      console.error("Error updating comment:", err);
-    }
-  };
-
   const handleDeleteConfirm = async (commentId) => {
     try {
       await commentAPI.delete(id, commentId);
@@ -98,16 +72,10 @@ export function usePostDetails(id) {
     commentContent,
     setCommentContent,
     submitting,
-    editingCommentId,
-    editingContent,
-    setEditingContent,
     deletingCommentId,
     setDeletingCommentId,
     commentError,
     handleAddComment,
-    handleEditStart,
-    handleEditCancel,
-    handleEditSave,
     handleDeleteConfirm,
   };
 }

@@ -43,6 +43,15 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleEscape = (e) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [isOpen, onClose]);
+
   const handleSubmit = async (e) => {
     e && e.preventDefault();
     if (!title || !content || !categoryId) {
@@ -71,7 +80,7 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
   const selectedCategory = categories.find((c) => c.id.toString() === categoryId.toString());
 
   return (
-    <div className="fixed inset-0 z-[100] bg-ping-bg md:bg-ping-dark md:bg-opacity-50 flex items-center justify-center p-0 md:p-4 font-inter">
+    <div role="dialog" aria-modal="true" aria-labelledby="create-post-title" className="fixed inset-0 z-[100] bg-ping-bg md:bg-ping-dark md:bg-opacity-50 flex items-center justify-center p-0 md:p-4 font-inter">
       <div className="bg-ping-bg w-full h-full md:h-auto md:max-w-[542px] md:rounded-[14px] shadow-xl overflow-y-auto animate-in fade-in zoom-in duration-200 flex flex-col">
         
         {/* Mobile Header (Nav + Breadcrumb) */}
@@ -101,7 +110,7 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
 
         {/* Desktop Header */}
         <div className="hidden md:flex items-center justify-between p-6 pb-4 shrink-0">
-          <h2 className="text-xl font-semibold text-ping-heading leading-[1.5]">
+          <h2 id="create-post-title" className="text-xl font-semibold text-ping-heading leading-[1.5]">
             Create New Post
           </h2>
           <button

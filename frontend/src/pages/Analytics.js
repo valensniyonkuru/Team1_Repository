@@ -1,5 +1,5 @@
 import React from "react";
-import { useAnalytics, CATEGORY_ORDER, DAY_ORDER } from "../hooks/useAnalytics";
+import { useAnalytics, DAY_ORDER } from "../hooks/useAnalytics";
 import BarChart from "../components/BarChart";
 import Breadcrumb from "../components/Breadcrumb";
 import { TrendingUpIcon, MessageCircleIcon } from "../components/icons";
@@ -62,7 +62,7 @@ const Analytics = () => {
                   Posts by Category
                 </h2>
               </div>
-              <BarChart bars={stats?.catBars ?? [0, 0, 0, 0]} xLabels={CATEGORY_ORDER} />
+              <BarChart bars={stats?.catBars ?? []} xLabels={stats?.categoryLabels ?? []} />
             </div>
 
             <div className="bg-ping-bg border border-ping-stroke rounded-[8px] p-[16px] flex flex-col gap-[16px]">

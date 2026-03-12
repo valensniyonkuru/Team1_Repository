@@ -13,11 +13,16 @@ const CreatePost = () => {
   const { user } = useAuth();
 
   useEffect(() => {
+    if (!user) {
+      navigate("/login");
+    }
+  }, [user, navigate]);
+
+  useEffect(() => {
     categoryAPI.getAll().then(res => setCategories(res.data)).catch(() => {});
   }, []);
 
   if (!user) {
-    navigate("/login");
     return null;
   }
 

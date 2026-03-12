@@ -18,7 +18,7 @@ const PostCard = ({ id, title, body, category, author, time, commentCount }) => 
         {category && (
           <span
             data-testid="post-category"
-            className={`shrink-0 inline-flex items-center justify-center px-3 py-0.5 rounded-md border text-sm font-medium leading-[1.5] ${colors.bg} ${colors.border} ${colors.text}`}
+            className={`shrink-0 inline-flex items-center justify-center px-3 py-0.5 rounded-md border text-sm font-medium leading-[1.5] uppercase ${colors.bg} ${colors.border} ${colors.text}`}
           >
             {category}
           </span>

@@ -1,11 +1,10 @@
 import { useState, useCallback, useEffect } from "react";
 import { postAPI } from "../services/api";
 
-const CATEGORY_ORDER = ["Events", "Help Requests", "Lost & Found", "Recommendations"];
 const DAY_ORDER = ["Mon", "Tues", "Wed", "Thurs", "Fri", "Sat", "Sun"];
 const DAY_INDEX_MAP = { 0: "Sun", 1: "Mon", 2: "Tues", 3: "Wed", 4: "Thurs", 5: "Fri", 6: "Sat" };
 
-export { CATEGORY_ORDER, DAY_ORDER };
+export { DAY_ORDER };
 
 export function useAnalytics() {
   const [stats, setStats] = useState(null);
@@ -21,10 +20,10 @@ export function useAnalytics() {
       const totalComments = posts.reduce((sum, p) => sum + (p.commentCount ?? 0), 0);
 
       const catCounts = {};
-      CATEGORY_ORDER.forEach((c) => (catCounts[c] = 0));
       posts.forEach((p) => {
         if (p.categoryName) catCounts[p.categoryName] = (catCounts[p.categoryName] ?? 0) + 1;
       });
+      const categoryLabels = Object.keys(catCounts).sort((a, b) => a.localeCompare(b));
 
       const dayCounts = {};
       DAY_ORDER.forEach((d) => (dayCounts[d] = 0));
@@ -47,7 +46,8 @@ export function useAnalytics() {
       setStats({
         totalPosts,
         totalComments,
-        catBars: CATEGORY_ORDER.map((c) => catCounts[c]),
+        categoryLabels,
+        catBars: categoryLabels.map((c) => catCounts[c]),
         dayBars: DAY_ORDER.map((d) => dayCounts[d]),
         topContributors,
       });
