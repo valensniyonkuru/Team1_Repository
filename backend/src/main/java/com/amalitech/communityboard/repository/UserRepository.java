@@ -14,5 +14,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     boolean existsByEmailAndDeletedAtIsNull(String email);
 
+    boolean existsByRole(com.amalitech.communityboard.model.enums.Role role);
+
     Optional<User> findByIdAndDeletedAtIsNull(Long id);
 }

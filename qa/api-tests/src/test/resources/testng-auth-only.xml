@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<suite name="Auth-only suite (for presentation)" verbose="1">
+  <test name="Auth tests only">
+    <classes>
+      <class name="com.amalitech.qa.auth.AuthRegisterApiTest"/>
+      <class name="com.amalitech.qa.auth.AuthLoginApiTest"/>
+      <class name="com.amalitech.qa.AuthApiTest"/>
+    </classes>
+  </test>
+</suite>

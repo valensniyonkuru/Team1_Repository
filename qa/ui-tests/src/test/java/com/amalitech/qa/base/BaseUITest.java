@@ -17,8 +17,9 @@ import java.time.Duration;
 public class BaseUITest {
 
     protected static final String BASE_URL    = "http://localhost:3000";
+    // Use the same seeded admin the backend and API tests use
     protected static final String ADMIN_EMAIL = "admin@amalitech.com";
-    protected static final String ADMIN_PASS  = "password123";
+    protected static final String ADMIN_PASS  = "QAAdmin@123";
 
     protected WebDriver driver;
     protected WebDriverWait wait;
