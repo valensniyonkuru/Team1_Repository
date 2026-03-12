@@ -320,15 +320,29 @@ def insert_comments(conn: Connection, user_ids: List[int], post_ids: List[int], 
     # Pre-fetch sequences
     seq_records = conn.execute(text(f"SELECT nextval('comments_seq') FROM generate_series(1, {n_comments})")).fetchall()
     comment_ids = [r[0] for r in seq_records]
+    rows = conn.execute(text("SELECT id, created_at FROM posts;")).fetchall()
+    post_created_at = {r[0]: r[1] for r in rows}
 
     for i in range(n_comments):
+        post_id = RNG.choice(post_ids)
+        post_ts = post_created_at[post_id]
+        
+        # Comment must be after the post was created
+        now = datetime.utcnow()
+        max_days = max(1, (now - post_ts).days)
+        created_at = post_ts + timedelta(
+            days=RNG.randint(0, max_days),
+            hours=RNG.randint(0, 23),
+            minutes=RNG.randint(0, 59),
+        )
+        created_at = min(created_at, now) # Clamping the ts to now
         comments.append(
             {
                 "id": comment_ids[i],
                 "content": fake.sentence(nb_words=10).rstrip("."),
-                "created_at": rand_ts(40),
+                "created_at": created_at,
                 "author_id": RNG.choice(user_ids),
-                "post_id": RNG.choice(post_ids),
+                "post_id": post_id,
             }
         )
 
