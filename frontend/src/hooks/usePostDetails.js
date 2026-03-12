@@ -1,16 +1,16 @@
 import { useState, useCallback, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { postAPI, commentAPI } from "../services/api";
 import { useToast } from "../context/ToastContext";
 
 export function usePostDetails(id) {
   const { showToast } = useToast();
+  const navigate = useNavigate();
   const [post, setPost] = useState(null);
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [commentContent, setCommentContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [editingCommentId, setEditingCommentId] = useState(null);
-  const [editingContent, setEditingContent] = useState("");
   const [deletingCommentId, setDeletingCommentId] = useState(null);
   const [commentError, setCommentError] = useState("");
 
@@ -56,30 +56,6 @@ export function usePostDetails(id) {
     }
   };
 
-  const handleEditStart = (comment) => {
-    setEditingCommentId(comment.id);
-    setEditingContent(comment.content);
-  };
-
-  const handleEditCancel = () => {
-    setEditingCommentId(null);
-    setEditingContent("");
-  };
-
-  const handleEditSave = async (commentId) => {
-    if (!editingContent.trim()) return;
-    try {
-      await commentAPI.update(id, commentId, { content: editingContent });
-      setComments((prev) =>
-        prev.map((c) => (c.id === commentId ? { ...c, content: editingContent.trim() } : c))
-      );
-      setEditingCommentId(null);
-      setEditingContent("");
-    } catch (err) {
-      console.error("Error updating comment:", err);
-    }
-  };
-
   const handleDeleteConfirm = async (commentId) => {
     try {
       await commentAPI.delete(id, commentId);
@@ -91,6 +67,17 @@ export function usePostDetails(id) {
     }
   };
 
+  const handleDeletePost = async () => {
+    try {
+      await postAPI.delete(id);
+      showToast("Post deleted", "success");
+      navigate("/");
+    } catch (err) {
+      const message = err.response?.data?.message || "Failed to delete post.";
+      showToast(message, "error");
+    }
+  };
+
   return {
     post,
     comments,
@@ -98,16 +85,11 @@ export function usePostDetails(id) {
     commentContent,
     setCommentContent,
     submitting,
-    editingCommentId,
-    editingContent,
-    setEditingContent,
     deletingCommentId,
     setDeletingCommentId,
     commentError,
     handleAddComment,
-    handleEditStart,
-    handleEditCancel,
-    handleEditSave,
     handleDeleteConfirm,
+    handleDeletePost,
   };
 }

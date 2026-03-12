@@ -1,10 +1,10 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { ClockIcon, CommentIcon } from "./icons";
-import { CATEGORY_COLORS, DEFAULT_CATEGORY_COLORS } from "../constants/categoryColors";
+import { getCategoryColors } from "../constants/categoryColors";
 
 const PostCard = ({ id, title, body, category, author, time, commentCount }) => {
-  const colors = CATEGORY_COLORS[category] || DEFAULT_CATEGORY_COLORS;
+  const colors = getCategoryColors(category);
 
   return (
     <article className="bg-ping-bg border border-ping-stroke rounded-[14px] px-4 py-6 md:p-6 w-full font-inter">
@@ -18,7 +18,7 @@ const PostCard = ({ id, title, body, category, author, time, commentCount }) => 
         {category && (
           <span
             data-testid="post-category"
-            className={`shrink-0 inline-flex items-center justify-center px-3 py-0.5 rounded-md border text-sm font-medium leading-[1.5] ${colors.bg} ${colors.border} ${colors.text}`}
+            className={`shrink-0 inline-flex items-center justify-center px-3 py-0.5 rounded-md border text-sm font-medium leading-[1.5] uppercase ${colors.bg} ${colors.border} ${colors.text}`}
           >
             {category}
           </span>

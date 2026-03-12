@@ -102,7 +102,7 @@ const Register = () => {
                 <label htmlFor="reg-name" className="font-inter text-sm font-medium leading-normal text-ping-body-primary">
                   Full Name
                 </label>
-                <div className="flex items-center gap-2.5 rounded-lg border border-ping-input-border bg-ping-input-bg px-4 py-3">
+                <div className="flex items-center gap-2.5 rounded-lg border border-ping-input-border bg-ping-input-bg px-4 py-3 transition-colors focus-within:border-ping-dark focus-within:bg-white">
                   <MailIcon />
                   <input
                     id="reg-name"
@@ -121,7 +121,7 @@ const Register = () => {
                 <label htmlFor="reg-email" className="font-inter text-sm font-medium leading-normal text-ping-body-primary">
                   Email
                 </label>
-                <div className="flex items-center gap-2.5 rounded-lg border border-ping-input-border bg-ping-input-bg px-4 py-3">
+                <div className="flex items-center gap-2.5 rounded-lg border border-ping-input-border bg-ping-input-bg px-4 py-3 transition-colors focus-within:border-ping-dark focus-within:bg-white">
                   <MailIcon />
                   <input
                     id="reg-email"
@@ -140,7 +140,7 @@ const Register = () => {
                 <label htmlFor="reg-password" className="font-inter text-sm font-medium leading-normal text-ping-body-primary">
                   Password
                 </label>
-                <div className="flex items-center gap-2.5 rounded-lg border border-ping-input-border bg-ping-input-bg px-4 py-3">
+                <div className="flex items-center gap-2.5 rounded-lg border border-ping-input-border bg-ping-input-bg px-4 py-3 transition-colors focus-within:border-ping-dark focus-within:bg-white">
                   <LockIcon />
                   <input
                     id="reg-password"
@@ -170,7 +170,7 @@ const Register = () => {
                 <label htmlFor="reg-confirm-password" className="font-inter text-sm font-medium leading-normal text-ping-body-primary">
                   Confirm Password
                 </label>
-                <div className="flex items-center gap-2.5 rounded-lg border border-ping-input-border bg-ping-input-bg px-4 py-3">
+                <div className="flex items-center gap-2.5 rounded-lg border border-ping-input-border bg-ping-input-bg px-4 py-3 transition-colors focus-within:border-ping-dark focus-within:bg-white">
                   <LockIcon />
                   <input
                     id="reg-confirm-password"

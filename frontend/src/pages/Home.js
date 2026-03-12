@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { postAPI } from "../services/api";
+import { postAPI, categoryAPI } from "../services/api";
 import CreatePostModal from "../components/CreatePostModal";
 import PostCard from "../components/PostCard";
 import Pagination from "../components/Pagination";
@@ -14,14 +14,18 @@ const Home = () => {
   const [activeCategory, setActiveCategory] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [categories, setCategories] = useState(["All"]);
 
-  const categories = [
-    "All",
-    "Events",
-    "Lost & Found",
-    "Recommendations",
-    "Help Requests",
-  ];
+  useEffect(() => {
+    categoryAPI
+      .getAll()
+      .then((res) => {
+        const data = res.data?.data || res.data || [];
+        const names = (Array.isArray(data) ? data : []).map((c) => c.name);
+        setCategories(["All", ...names]);
+      })
+      .catch(() => {});
+  }, []);
 
   const fetchPosts = useCallback(() => {
     setLoading(true);
@@ -106,7 +110,7 @@ const Home = () => {
               <button
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
-                className={`flex items-center justify-center px-3 py-0.5 rounded-md border border-ping-badge-stroke text-sm font-medium leading-[1.5] transition-colors ${
+                className={`flex items-center justify-center px-3 py-0.5 rounded-md border border-ping-badge-stroke text-sm font-medium leading-[1.5] uppercase transition-colors ${
                   activeCategory === cat
                     ? "bg-ping-badge-bg text-ping-dark"
                     : "bg-ping-bg text-ping-dark hover:bg-gray-50"

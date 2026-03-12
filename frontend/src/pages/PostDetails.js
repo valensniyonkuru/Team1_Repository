@@ -2,11 +2,12 @@ import React from "react";
 import { useParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { usePostDetails } from "../hooks/usePostDetails";
-import { CATEGORY_COLORS } from "../constants/categoryColors";
+import { getCategoryColors } from "../constants/categoryColors";
 import { timeAgo } from "../utils/formatDate";
 import Breadcrumb from "../components/Breadcrumb";
 import CommentForm from "../components/CommentForm";
 import CommentItem from "../components/CommentItem";
+import SwipeToDelete from "../components/SwipeToDelete";
 import { ClockIcon } from "../components/icons";
 
 const formatDate = (dateString, format = "relative") => {
@@ -31,18 +32,15 @@ const PostDetails = () => {
     commentContent,
     setCommentContent,
     submitting,
-    editingCommentId,
-    editingContent,
-    setEditingContent,
     deletingCommentId,
     setDeletingCommentId,
     commentError,
     handleAddComment,
-    handleEditStart,
-    handleEditCancel,
-    handleEditSave,
     handleDeleteConfirm,
+    handleDeletePost,
   } = usePostDetails(id);
+
+  const canModifyPost = user && (user.name === post?.authorName || user.role === "ADMIN");
 
   const canModifyComment = (comment) =>
     user && (user.name === comment.authorName || user.role === "ADMIN");
@@ -63,7 +61,7 @@ const PostDetails = () => {
     );
   }
 
-  const categoryStyles = CATEGORY_COLORS[post.categoryName] || CATEGORY_COLORS["Events"];
+  const categoryStyles = getCategoryColors(post.categoryName);
 
   return (
     <div className="bg-ping-bg min-h-screen">
@@ -74,6 +72,7 @@ const PostDetails = () => {
         <div className="flex flex-col gap-[40px] w-full">
 
           {/* Post Header & Body */}
+          <SwipeToDelete onDelete={handleDeletePost} disabled={!canModifyPost} label="Delete Post">
           <div className="flex flex-col gap-[16px] w-full">
             <div className="flex flex-row items-start gap-[46px] w-full">
               <h1 className="text-[32px] font-semibold font-poppins text-ping-heading leading-[1.5] flex-1 min-w-0">
@@ -97,6 +96,7 @@ const PostDetails = () => {
             </div>
             <div className="w-full h-px bg-ping-stroke mt-4" />
           </div>
+          </SwipeToDelete>
 
           {/* Comments Section */}
           <div className="flex flex-col gap-[20px] w-full">
@@ -126,20 +126,14 @@ const PostDetails = () => {
                   {comments.map((comment, index) => (
                     <React.Fragment key={comment.id}>
                       <CommentItem
-                        comment={comment}
-                        canModify={canModifyComment(comment)}
-                        isEditing={editingCommentId === comment.id}
-                        editingContent={editingContent}
-                        onEditingContentChange={setEditingContent}
-                        onEditStart={handleEditStart}
-                        onEditSave={handleEditSave}
-                        onEditCancel={handleEditCancel}
-                        deletingId={deletingCommentId}
-                        onDeleteRequest={setDeletingCommentId}
-                        onDeleteConfirm={handleDeleteConfirm}
-                        onDeleteCancel={() => setDeletingCommentId(null)}
-                        formatDate={formatDate}
-                      />
+                          comment={comment}
+                          canModify={canModifyComment(comment)}
+                          deletingId={deletingCommentId}
+                          onDeleteRequest={setDeletingCommentId}
+                          onDeleteConfirm={handleDeleteConfirm}
+                          onDeleteCancel={() => setDeletingCommentId(null)}
+                          formatDate={formatDate}
+                        />
                       {index < comments.length - 1 && (
                         <div className="w-full h-px bg-ping-stroke" />
                       )}
