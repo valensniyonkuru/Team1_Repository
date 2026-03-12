@@ -14,6 +14,11 @@ import java.util.concurrent.CompletableFuture;
 @RequiredArgsConstructor
 public class AnalyticsService {
 
+    private static final int DAILY_ACTIVITY_DAYS = 30;
+    private static final int TOP_CONTRIBUTORS_LIMIT = 10;
+    private static final int USER_ENGAGEMENT_LIMIT = 50;
+    private static final int CONTENT_STATS_DAYS = 30;
+
     private final JdbcTemplate jdbcTemplate;
 
     public CompletableFuture<AnalyticsDtos.Overview> getOverviewAsync() {
@@ -41,9 +46,11 @@ public class AnalyticsService {
 
     @Async
     public CompletableFuture<List<AnalyticsDtos.DailyActivity>> getDailyActivityAsync() {
+        LocalDate since = LocalDate.now().minusDays(DAILY_ACTIVITY_DAYS);
         String sql = """
                 SELECT date, category, post_count
                 FROM analytics_daily_activity
+                WHERE date >= ?
                 ORDER BY date DESC, category ASC
                 """;
 
@@ -54,7 +61,7 @@ public class AnalyticsService {
                     .category(rs.getString("category"))
                     .postCount(rs.getLong("post_count"))
                     .build();
-        });
+        }, since);
         return CompletableFuture.completedFuture(result);
     }
 
@@ -68,6 +75,7 @@ public class AnalyticsService {
                        total_engagement
                 FROM analytics_user_engagement
                 ORDER BY total_engagement DESC
+                LIMIT ?
                 """;
 
         List<AnalyticsDtos.UserEngagement> result = jdbcTemplate.query(sql, (rs, rowNum) ->
@@ -78,7 +86,7 @@ public class AnalyticsService {
                         .commentsMade(rs.getLong("comments_made"))
                         .totalEngagement(rs.getLong("total_engagement"))
                         .build()
-        );
+        , USER_ENGAGEMENT_LIMIT);
         return CompletableFuture.completedFuture(result);
     }
 
@@ -110,6 +118,7 @@ public class AnalyticsService {
                        total_engagement
                 FROM analytics_top_contributors
                 ORDER BY total_engagement DESC
+                LIMIT ?
                 """;
 
         List<AnalyticsDtos.TopContributor> result = jdbcTemplate.query(sql, (rs, rowNum) ->
@@ -120,17 +129,19 @@ public class AnalyticsService {
                         .commentsMade(rs.getLong("comments_made"))
                         .totalEngagement(rs.getLong("total_engagement"))
                         .build()
-        );
+        , TOP_CONTRIBUTORS_LIMIT);
         return CompletableFuture.completedFuture(result);
     }
 
     @Async
     public CompletableFuture<List<AnalyticsDtos.ContentStat>> getContentStatsAsync() {
+        LocalDate since = LocalDate.now().minusDays(CONTENT_STATS_DAYS);
         String sql = """
                 SELECT date,
                        avg_title_len,
                        avg_content_len
                 FROM analytics_content_stats
+                WHERE date >= ?
                 ORDER BY date DESC
                 """;
 
@@ -140,7 +151,7 @@ public class AnalyticsService {
                         .avgTitleLen(rs.getDouble("avg_title_len"))
                         .avgContentLen(rs.getDouble("avg_content_len"))
                         .build()
-        );
+        , since);
         return CompletableFuture.completedFuture(result);
     }
 }
