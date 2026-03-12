@@ -28,8 +28,13 @@ public class BaseUITest {
     public void setupDriver() {
         WebDriverManager.chromedriver().setup();
         ChromeOptions options = new ChromeOptions();
-        // remove headless to debug visually; add headless later if needed
-        options.addArguments("--no-sandbox", "--disable-dev-shm-usage", "--window-size=1920,1080");
+        // Run in a CI-friendly headless mode; flags also work locally.
+        options.addArguments(
+                "--headless=new",
+                "--no-sandbox",
+                "--disable-dev-shm-usage",
+                "--window-size=1920,1080"
+        );
         driver = new ChromeDriver(options);
         wait   = new WebDriverWait(driver, Duration.ofSeconds(25)); // increase wait for slow React
     }
