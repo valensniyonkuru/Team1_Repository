@@ -68,6 +68,7 @@ services:
       MAIL_PASSWORD: ${MAIL_PASSWORD}
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      REACT_APP_BACKEND_URL: ${REACT_APP_BACKEND_URL}
     ports:
       - "8080:8080"
     depends_on:
