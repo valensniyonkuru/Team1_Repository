@@ -1,6 +1,7 @@
 import React from "react";
 import { useAnalytics, DAY_ORDER } from "../hooks/useAnalytics";
 import BarChart from "../components/BarChart";
+import PageLoader from "../components/Spinner";
 import Breadcrumb from "../components/Breadcrumb";
 import { TrendingUpIcon, MessageCircleIcon } from "../components/icons";
 
@@ -8,11 +9,7 @@ const Analytics = () => {
   const { stats, loading } = useAnalytics();
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-ping-dark" />
-      </div>
-    );
+    return <PageLoader />;
   }
 
   return (

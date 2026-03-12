@@ -9,6 +9,7 @@ import CommentForm from "../components/CommentForm";
 import CommentItem from "../components/CommentItem";
 import SwipeToDelete from "../components/SwipeToDelete";
 import { ClockIcon } from "../components/icons";
+import PageLoader from "../components/Spinner";
 
 const formatDate = (dateString, format = "relative") => {
   const date = new Date(dateString);
@@ -46,11 +47,7 @@ const PostDetails = () => {
     user && (user.name === comment.authorName || user.role === "ADMIN");
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-ping-dark" />
-      </div>
-    );
+    return <PageLoader />;
   }
 
   if (!post) {

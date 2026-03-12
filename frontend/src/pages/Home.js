@@ -5,6 +5,7 @@ import PostCard from "../components/PostCard";
 import Pagination from "../components/Pagination";
 import { timeAgo } from "../utils/formatDate";
 import { SearchIcon, CloseIcon, PlusIcon } from "../components/icons";
+import PageLoader from "../components/Spinner";
 
 const Home = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -51,11 +52,7 @@ const Home = () => {
   );
 
   if (loading) {
-    return (
-      <div className="mt-8 flex items-center justify-center min-h-[50vh]">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-ping-dark border-t-transparent" />
-      </div>
-    );
+    return <PageLoader className="mt-8 min-h-[50vh]" />;
   }
 
   return (
