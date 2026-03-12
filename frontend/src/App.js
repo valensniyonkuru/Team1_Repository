@@ -13,6 +13,7 @@ import ForgotPassword from "./pages/auth/ForgotPassword";
 import ResetPassword from "./pages/auth/ResetPassword";
 import PostDetails from "./pages/PostDetails";
 import Analytics from "./pages/Analytics";
+import Profile from "./pages/Profile";
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -59,6 +60,7 @@ function App() {
               <Route path="/create-post" element={<CreatePost />} />
               <Route path="/posts/:id" element={<PostDetails />} />
               <Route path="/analytics" element={<Analytics />} />
+              <Route path="/profile" element={<Profile />} />
             </Route>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />

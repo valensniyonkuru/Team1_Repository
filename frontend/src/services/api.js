@@ -111,4 +111,11 @@ export const commentAPI = {
   delete: (postId, commentId) => API.delete(`/posts/${postId}/comments/${commentId}`),
 };
 
+export const accountAPI = {
+  getMe: () => API.get("/account/me"),
+  changePassword: (data) => API.put("/account/change-password", data),
+  changeEmail: (data) => API.put("/account/change-email", data),
+  deleteAccount: () => API.delete("/account/delete-account"),
+};
+
 export default API;
