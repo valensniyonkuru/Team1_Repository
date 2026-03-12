@@ -80,7 +80,17 @@ def transform_daily_activity(posts_df: pd.DataFrame) -> pd.DataFrame:
         log.error("Failed to transform daily activity: %s", e)
         raise
 
-
+def transform_day_of_week(posts_df: pd.DataFrame) -> pd.DataFrame:
+    """Calculate post counts by day of week."""
+    try:
+        df = posts_df.copy()
+        df["day_of_week"] = pd.to_datetime(df["created_at"]).dt.day_name()
+        result = df.groupby("day_of_week").size().reset_index(name="post_count")
+        log.info("Transformed: day_of_week=%d", len(result))
+        return result
+    except Exception as e:
+        log.error("Failed to transform day of week: %s", e)
+        raise
 def transform_user_engagement(posts_df: pd.DataFrame, comments_df: pd.DataFrame) -> pd.DataFrame:
     """
     Compute per-user engagement metrics:
@@ -243,6 +253,7 @@ def run_pipeline() -> None:
     category_trends = transform_category_trends(posts_df)
     top_contributors = transform_top_contributors(user_engagement)
     content_stats = transform_content_stats(posts_df)
+    day_of_week = transform_day_of_week(posts_df)
 
     log.info(
         "Transformed: daily_activity=%d, user_engagement=%d, category_trends=%d, top_contributors=%d, content_stats=%d",
@@ -255,6 +266,8 @@ def run_pipeline() -> None:
     load_analytics(category_trends, "analytics_category_trends")
     load_analytics(top_contributors, "analytics_top_contributors")
     load_analytics(content_stats, "analytics_content_stats")
+    load_analytics(day_of_week, "analytics_posts_day_of_week")
+
 
     log.info("ETL pipeline complete!")
 
