@@ -87,7 +87,7 @@ public class PostService {
         return toResponse(postRepository.save(post));
     }
 
-    
+
     @Transactional
     @PreAuthorize("hasRole('ADMIN') or #author.id == principal.id ")
     public void deletePost(Long id, User author) {
