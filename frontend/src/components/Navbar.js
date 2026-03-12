@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 const ChartIcon = () => (
@@ -99,6 +99,8 @@ const HamburgerIcon = () => (
 
 const Navbar = () => {
   const { user, logout } = useAuth();
+  const location = useLocation();
+  const isAnalytics = location.pathname === "/analytics";
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Prevent scrolling when mobile menu is open
@@ -140,11 +142,6 @@ const Navbar = () => {
 
       {/* Mobile Actions */}
       <div className="flex items-center gap-5 md:hidden">
-        {user && (
-          <button className="flex items-center justify-center p-1 relative">
-            <BellIcon />
-          </button>
-        )}
         <button
           className="flex items-center justify-center p-1"
           onClick={() => setIsMobileMenuOpen(true)}
@@ -158,11 +155,17 @@ const Navbar = () => {
           <>
             <div className="hidden sm:flex items-center gap-5">
               <Link
-                to="/"
-                className="flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 transition-colors hover:bg-gray-100"
+                to="/analytics"
+                className={`flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 transition-colors ${
+                  isAnalytics
+                    ? "bg-ping-dark"
+                    : "hover:bg-gray-100"
+                }`}
               >
-                <ChartIcon />
-                <span className="font-inter text-sm font-medium text-[#061c2a]">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={isAnalytics ? "#fdfdfd" : "#061c2a"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 20V10M12 20V4M6 20v-6" />
+                </svg>
+                <span className={`font-inter text-sm font-medium ${isAnalytics ? "text-ping-bg" : "text-[#061c2a]"}`}>
                   Analytics
                 </span>
               </Link>
@@ -254,14 +257,18 @@ const Navbar = () => {
               {user ? (
                 <>
                   <Link
-                    to="/"
+                    to="/analytics"
                     onClick={handleLinkClick}
-                    className="flex items-center gap-2 px-5 w-full py-2.5 rounded-lg overflow-hidden shrink-0"
+                    className={`flex items-center gap-2 px-5 w-full py-2.5 rounded-lg overflow-hidden shrink-0 transition-colors ${
+                      isAnalytics ? "bg-ping-dark" : ""
+                    }`}
                   >
                     <div className="w-5 h-5 flex items-center justify-center">
-                      <ChartIcon />
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={isAnalytics ? "#fdfdfd" : "#061c2a"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M18 20V10M12 20V4M6 20v-6" />
+                      </svg>
                     </div>
-                    <span className="text-sm font-medium leading-[1.5] text-[#061c2a]">
+                    <span className={`text-sm font-medium leading-[1.5] ${isAnalytics ? "text-ping-bg" : "text-[#061c2a]"}`}>
                       Analytics
                     </span>
                   </Link>
