@@ -14,21 +14,23 @@ public class AuthRegisterApiTest extends BaseApiTest {
     @Test(priority = 1)
     public void testRegisterNewUser() {
         String email = uniqueEmail();
+
         given()
             .contentType(ContentType.JSON)
-            .body("{\"name\":\"QA Tester\",\"email\":\"" + email + "\",\"password\":\"test1234\"}")
+            .body("{\"name\":\"QA Tester\",\"email\":\"" + email + "\",\"password\":\"Test@1234\"}")
         .when()
             .post("/api/auth/register")
         .then()
-            .statusCode(201)   // BUG raised to Peggy — currently returns 200
-            .body("token", notNullValue());
+            .statusCode(201)
+            .body("data.accessToken", notNullValue())
+            .body("data.email", equalTo(email));
     }
 
     // TC-AUTH-002: Duplicate email returns 409
     @Test(priority = 2)
     public void testRegisterDuplicateEmail() {
         String email = uniqueEmail();
-        String body = "{\"name\":\"QA Tester\",\"email\":\"" + email + "\",\"password\":\"test1234\"}";
+        String body = "{\"name\":\"QA Tester\",\"email\":\"" + email + "\",\"password\":\"Test@1234\"}";
         given().contentType(ContentType.JSON).body(body).when().post("/api/auth/register").then().statusCode(201);
         given().contentType(ContentType.JSON).body(body).when().post("/api/auth/register").then().statusCode(409);
     }
@@ -50,12 +52,12 @@ public class AuthRegisterApiTest extends BaseApiTest {
     public void testPasswordNotReturnedInResponse() {
         given()
             .contentType(ContentType.JSON)
-            .body("{\"name\":\"QA Tester\",\"email\":\"" + uniqueEmail() + "\",\"password\":\"test1234\"}")
+            .body("{\"name\":\"QA Tester\",\"email\":\"" + uniqueEmail() + "\",\"password\":\"Test@1234\"}")
         .when()
             .post("/api/auth/register")
         .then()
             .statusCode(201)
-            .body("password", nullValue());
+            .body("data.password", nullValue());
     }
 
     // TC-AUTH-005: userId and email returned on success
@@ -64,13 +66,13 @@ public class AuthRegisterApiTest extends BaseApiTest {
         String email = uniqueEmail();
         given()
             .contentType(ContentType.JSON)
-            .body("{\"name\":\"QA Tester\",\"email\":\"" + email + "\",\"password\":\"test1234\"}")
+            .body("{\"name\":\"QA Tester\",\"email\":\"" + email + "\",\"password\":\"Test@1234\"}")
         .when()
             .post("/api/auth/register")
         .then()
             .statusCode(201)
-            .body("id",    notNullValue())
-            .body("email", equalTo(email));
+            .body("data.email", equalTo(email))
+            .body("data.accessToken", notNullValue());
     }
 
     // TODO: TC-AUTH-006 testRegisterInvalidEmailFormat  -> expect 400

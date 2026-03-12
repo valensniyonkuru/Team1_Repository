@@ -24,5 +24,6 @@ public interface PostRepository extends JpaRepository<Post, Long>, JpaSpecificat
 
     Page<PostWithCommentCount> findAllWithCommentCount(Pageable pageable);
 
-
+    @Query("SELECT p.category.name, COUNT(p) FROM Post p WHERE p.category IS NOT NULL GROUP BY p.category.name")
+    List<Object[]> countPostsByCategoryName();
 }

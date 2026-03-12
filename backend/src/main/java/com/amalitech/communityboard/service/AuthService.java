@@ -13,6 +13,7 @@ import com.amalitech.communityboard.security.RateLimiterService;
 import com.amalitech.communityboard.security.TokenBlacklistService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -23,6 +24,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuthService {
 
     private final UserRepository userRepository;
@@ -55,21 +57,46 @@ public class AuthService {
 
         userRepository.save(user);
 
-        authTokenStore.storeEmailVerificationToken(verificationToken, user.getEmail());
-        emailService.sendVerificationEmail(user.getEmail(), verificationToken);
+        try {
+            authTokenStore.storeEmailVerificationToken(verificationToken, user.getEmail());
+            emailService.sendVerificationEmail(user.getEmail(), verificationToken);
+        } catch (Exception e) {
+            log.warn("Could not store verification token or send email (Redis/mail may be unavailable): {}", e.getMessage());
+        }
 
-        String accessToken = jwtService.generateAccessToken(user);
-        String refreshToken = jwtService.generateRefreshToken(user);
-
-        return AuthResponse.builder()
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .expiresIn(jwtService.getAccessTokenExpiration())
-                .email(user.getEmail())
-                .name(user.getName())
-                .role(user.getRole().name())
-                .emailVerified(user.isEmailVerified())
-                .build();
+        try {
+            String accessToken = jwtService.generateAccessToken(user);
+            String refreshToken = jwtService.generateRefreshToken(user);
+            return AuthResponse.builder()
+                    .accessToken(accessToken)
+                    .refreshToken(refreshToken)
+                    .expiresIn(jwtService.getAccessTokenExpiration())
+                    .email(user.getEmail())
+                    .name(user.getName())
+                    .role(user.getRole().name())
+                    .emailVerified(user.isEmailVerified())
+                    .build();
+        } catch (Throwable t) {
+            log.error("Token generation failed after register; re-fetching user", t);
+            User persisted = userRepository.findByEmailAndDeletedAtIsNull(email)
+                    .orElseThrow(() -> new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Registration saved but user could not be retrieved"));
+            try {
+                String accessToken = jwtService.generateAccessToken(persisted);
+                String refreshToken = jwtService.generateRefreshToken(persisted);
+                return AuthResponse.builder()
+                        .accessToken(accessToken)
+                        .refreshToken(refreshToken)
+                        .expiresIn(jwtService.getAccessTokenExpiration())
+                        .email(persisted.getEmail())
+                        .name(persisted.getName())
+                        .role(persisted.getRole().name())
+                        .emailVerified(persisted.isEmailVerified())
+                        .build();
+            } catch (Throwable t2) {
+                log.error("Token generation failed even after refetch", t2);
+                throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Registration succeeded. Please try logging in.");
+            }
+        }
     }
 
     @Transactional

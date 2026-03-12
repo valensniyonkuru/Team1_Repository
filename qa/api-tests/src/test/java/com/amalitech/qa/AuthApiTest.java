@@ -13,24 +13,27 @@ public class AuthApiTest {
         RestAssured.baseURI = "http://localhost:8080";
     }
 
+    private static String registeredEmail;
+
     @Test(priority = 1)
     public void testRegisterNewUser() {
+        registeredEmail = "qa_" + System.currentTimeMillis() + "@test.com";
         given()
             .contentType(ContentType.JSON)
-            .body("{\"name\":\"QA Tester\",\"email\":\"qa@test.com\",\"password\":\"Test@1234\"}")
+            .body("{\"name\":\"QA Tester\",\"email\":\"" + registeredEmail + "\",\"password\":\"Test@1234\"}")
         .when()
             .post("/api/auth/register")
         .then()
             .statusCode(201)
             .body("data.accessToken", notNullValue())
-            .body("data.email", equalTo("qa@test.com"));
+            .body("data.email", equalTo(registeredEmail));
     }
 
     @Test(priority = 2)
     public void testLoginExistingUser() {
         given()
             .contentType(ContentType.JSON)
-            .body("{\"email\":\"qa@test.com\",\"password\":\"Test@1234\"}")
+            .body("{\"email\":\"" + registeredEmail + "\",\"password\":\"Test@1234\"}")
         .when()
             .post("/api/auth/login")
         .then()

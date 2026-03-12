@@ -1,0 +1,64 @@
+datasource:
+  url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://13.60.89.185:5432/communityboard_qa}
+  username: ${SPRING_DATASOURCE_USERNAME:postgres}
+  password: ${SPRING_DATASOURCE_PASSWORD:communityboard}
+
+jpa:
+  hibernate:
+    ddl-auto: update          # keep schema updated without dropping
+  show-sql: false
+  properties:
+    hibernate:
+      dialect: org.hibernate.dialect.PostgreSQLDialect
+  defer-datasource-initialization: true
+
+sql:
+  init:
+    mode: always
+
+data:
+  redis:
+    host: ${REDIS_HOST:redis-11052.c73.us-east-1-2.ec2.cloud.redislabs.com}
+    port: ${REDIS_PORT:11052}
+    password: ${REDIS_PASSWORD:jHNHtCyZekJGd5f7fIoRWHg4rzLOPGPN}
+
+mail:
+  host: ${MAIL_HOST:localhost}
+  port: ${MAIL_PORT:1025}      # MailHog SMTP port for tests
+  username:
+  password:
+  properties:
+    mail:
+      smtp:
+        auth: false
+        starttls:
+          enable: false
+
+jwt:
+  access-token:
+    secret: ${JWT_ACCESS_SECRET:dev-jwt-secret-not-for-production-use}
+    expiration: 900000
+  refresh-token:
+    secret: ${JWT_REFRESH_SECRET:dev-jwt-secret-not-for-production-use}
+    expiration: 604800000
+
+app:
+  frontend-url: ${FRONTEND_URL:http://localhost:3000}
+
+server:
+  port: 8080
+
+management:
+  health:
+    mail:
+      enabled: false
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  level:
+    org.springframework.mail: DEBUG
