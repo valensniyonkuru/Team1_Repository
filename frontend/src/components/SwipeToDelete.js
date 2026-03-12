@@ -60,7 +60,7 @@ const SwipeToDelete = ({ children, onDelete, disabled = false, label = "Delete" 
     <div className="relative overflow-hidden select-none">
       {/* ── Delete action panel (sits behind content on the left) ── */}
       <div
-        className="absolute inset-y-0 left-0 flex items-stretch bg-[#dc2626]"
+        className="absolute inset-y-0 left-0 flex items-stretch rounded-lg bg-[#dc2626]"
         style={{ width: DELETE_PANEL_WIDTH }}
         aria-hidden={!isOpen}
       >
