@@ -14,7 +14,7 @@ const CommentForm = ({ value, onChange, onSubmit, submitting, error }) => (
     <button
       type="submit"
       disabled={submitting || !value.trim()}
-      className="w-full py-[12px] px-[20px] bg-ping-dark text-ping-bg rounded-[8px] text-[16px] font-medium font-inter leading-[1.5] hover:opacity-90 transition-opacity disabled:opacity-50"
+      className="w-[345px] py-[10px] px-[20px] bg-ping-dark text-ping-bg rounded-[8px] text-[14px] font-medium font-inter leading-[1.5] hover:opacity-90 transition-opacity disabled:opacity-50"
     >
       {submitting ? "Adding..." : "Add comment"}
     </button>
