@@ -74,12 +74,23 @@ public class AnalyticsDtos {
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
+    public static class PostsByDayOfWeek {
+        private Object dayOfWeek;  // integer (0-6) or string (e.g. "Mon") depending on source
+        private Long postCount;
+    }
+
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
     public static class Overview {
         private List<DailyActivity> dailyActivity;
         private List<UserEngagement> userEngagement;
         private List<CategoryTrend> categoryTrends;
         private List<TopContributor> topContributors;
         private List<ContentStat> contentStats;
+        private List<PostsByDayOfWeek> postsByDayOfWeek;
     }
 }
 

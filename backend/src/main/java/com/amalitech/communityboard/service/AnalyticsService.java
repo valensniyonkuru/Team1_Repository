@@ -27,13 +27,15 @@ public class AnalyticsService {
         CompletableFuture<List<AnalyticsDtos.CategoryTrend>> categoryTrendsFuture = getCategoryTrendsAsync();
         CompletableFuture<List<AnalyticsDtos.TopContributor>> topContributorsFuture = getTopContributorsAsync();
         CompletableFuture<List<AnalyticsDtos.ContentStat>> contentStatsFuture = getContentStatsAsync();
+        CompletableFuture<List<AnalyticsDtos.PostsByDayOfWeek>> postsByDayOfWeekFuture = getPostsByDayOfWeekAsync();
 
         return CompletableFuture.allOf(
                         dailyActivityFuture,
                         userEngagementFuture,
                         categoryTrendsFuture,
                         topContributorsFuture,
-                        contentStatsFuture
+                        contentStatsFuture,
+                        postsByDayOfWeekFuture
                 )
                 .thenApply(ignored -> AnalyticsDtos.Overview.builder()
                         .dailyActivity(dailyActivityFuture.join())
@@ -41,6 +43,7 @@ public class AnalyticsService {
                         .categoryTrends(categoryTrendsFuture.join())
                         .topContributors(topContributorsFuture.join())
                         .contentStats(contentStatsFuture.join())
+                        .postsByDayOfWeek(postsByDayOfWeekFuture.join())
                         .build());
     }
 
@@ -152,6 +155,24 @@ public class AnalyticsService {
                         .avgContentLen(rs.getDouble("avg_content_len"))
                         .build()
         , since);
+        return CompletableFuture.completedFuture(result);
+    }
+
+    @Async
+    public CompletableFuture<List<AnalyticsDtos.PostsByDayOfWeek>> getPostsByDayOfWeekAsync() {
+        String sql = """
+                SELECT day_of_week, post_count
+                FROM analytics_posts_day_of_week
+                ORDER BY day_of_week ASC
+                """;
+
+        List<AnalyticsDtos.PostsByDayOfWeek> result = jdbcTemplate.query(sql, (rs, rowNum) -> {
+            Object dayOfWeek = rs.getObject("day_of_week");
+            return AnalyticsDtos.PostsByDayOfWeek.builder()
+                    .dayOfWeek(dayOfWeek)
+                    .postCount(rs.getLong("post_count"))
+                    .build();
+        });
         return CompletableFuture.completedFuture(result);
     }
 }
