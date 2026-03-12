@@ -199,7 +199,7 @@ const PostDetails = () => {
     );
   }
 
-  const categoryStyles = CATEGORY_COLORS[post.category?.name] || CATEGORY_COLORS["Events"];
+  const categoryStyles = CATEGORY_COLORS[post.categoryName] || CATEGORY_COLORS["Events"];
 
   return (
     <div className="bg-ping-bg min-h-screen">
@@ -227,7 +227,7 @@ const PostDetails = () => {
                 {post.title}
               </h1>
               <div className={`shrink-0 px-[12px] py-[2px] border border-solid rounded-[6px] text-[14px] font-medium font-inter ${categoryStyles.bg} ${categoryStyles.border} ${categoryStyles.text} whitespace-nowrap`}>
-                {post.category?.name}
+                {post.categoryName}
               </div>
             </div>
 
@@ -265,7 +265,7 @@ const PostDetails = () => {
               <button 
                 type="submit"
                 disabled={submitting || !commentContent.trim()}
-                className="w-full md:w-[345px] py-[10px] px-[20px] bg-ping-dark text-ping-bg rounded-[8px] text-[14px] font-medium font-inter leading-[1.5] hover:opacity-90 transition-opacity disabled:opacity-50"
+                className="w-full py-[12px] px-[20px] bg-ping-dark text-ping-bg rounded-[8px] text-[16px] font-medium font-inter leading-[1.5] hover:opacity-90 transition-opacity disabled:opacity-50"
               >
                 {submitting ? "Adding..." : "Add comment"}
               </button>
@@ -329,15 +329,15 @@ const PostDetails = () => {
                               <textarea
                                 value={editingContent}
                                 onChange={(e) => setEditingContent(e.target.value)}
-                                className="w-full h-[100px] px-[16px] py-[12px] bg-ping-input-bg border border-ping-input-border rounded-[8px] text-[14px] text-ping-body-primary focus:outline-none focus:ring-1 focus:ring-ping-dark resize-none font-inter leading-[1.5]"
+                                className="w-full h-[100px] px-[16px] py-[14px] bg-ping-input-bg border border-ping-input-border rounded-[8px] text-[14px] text-ping-body-primary focus:outline-none focus:ring-1 focus:ring-ping-dark resize-none font-inter leading-[1.5]"
                               />
                               <div className="flex items-center gap-[8px]">
                                 <button
                                   onClick={() => handleEditSave(comment.id)}
                                   disabled={!editingContent.trim()}
-                                  className="text-[13px] font-medium font-inter text-white bg-ping-dark hover:opacity-90 transition-opacity px-[14px] py-[6px] rounded-[6px] disabled:opacity-50"
+                                  className="text-[14px] font-medium font-inter text-white bg-ping-dark hover:opacity-90 transition-opacity px-[20px] py-[10px] rounded-[8px] disabled:opacity-50"
                                 >
-                                  Save
+                                  Save Changes
                                 </button>
                                 <button
                                   onClick={handleEditCancel}

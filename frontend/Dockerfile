@@ -1,4 +1,15 @@
 # Development Dockerfile for React frontend
+
+# Stage 0: Dev server with hot reload (used by docker-compose.yml)
+FROM node:18-alpine AS dev
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+EXPOSE 3000
+ENV HOST=0.0.0.0
+CMD ["npm", "start"]
+
 # Stage 1: Build React app
 FROM node:18-alpine AS build
 
