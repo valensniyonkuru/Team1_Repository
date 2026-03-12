@@ -32,7 +32,6 @@ public class PostService {
     private final PostSearchMapper searchMapper;
 
     @Transactional(readOnly = true)
-    @Cacheable(value = "posts", key = "'first-' + #size", condition = "#page == 0")
     public Page<PostResponse> getAllPosts(int page, int size) {
         int safeSize = Math.min(size, MAX_PAGE_SIZE);
         Pageable pageable = PageRequest.of(page, safeSize, Sort.by("createdAt").descending());
@@ -69,7 +68,6 @@ public class PostService {
     }
 
     @Transactional
-    @CacheEvict(value = "posts", allEntries = true)
     @PreAuthorize("hasRole('ADMIN') or #author.id == principal.id ")
     public PostResponse updatePost(Long id, PostRequest request, User author) {
         Post post = postRepository.findById(id)
@@ -89,7 +87,7 @@ public class PostService {
         return toResponse(postRepository.save(post));
     }
 
-    @CacheEvict(value = "posts", allEntries = true)
+    
     @Transactional
     @PreAuthorize("hasRole('ADMIN') or #author.id == principal.id ")
     public void deletePost(Long id, User author) {
