@@ -182,6 +182,8 @@ jobs:
           SPRING_PROFILES=production
           JWT_SECRET=${{ secrets.PRODUCTION_JWT_SECRET }}
           REACT_APP_API_URL=${{ secrets.PRODUCTION_API_URL }}
+          FRONTEND_URL=${{ secrets.PRODUCTION_FRONTEND_URL }}
+          CORS_ALLOWED_ORIGINS=${{ secrets.PRODUCTION_CORS_ALLOWED_ORIGINS }}
           DOCKER_REGISTRY=${{ env.DOCKER_REGISTRY }}
           DOCKER_NAMESPACE=${{ env.DOCKER_NAMESPACE }}
           MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}

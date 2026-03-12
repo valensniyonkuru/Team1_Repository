@@ -109,13 +109,21 @@ def clear_existing_data(conn: Connection) -> None:
 def upsert_users(conn: Connection, n_users: int) -> List[int]:
     """Insert or update users by unique email; returns all user IDs."""
     users = []
-    BCRYPT_PASSWORD = "$2a$10$IXHfyQSclupPXbqi7RbAW..j8/ZU8WkwyoQHtZiHRfjnsjCBlVE5u"  # Password123!
+    BCRYPT_PASSWORD = os.getenv(
+        "SEED_BCRYPT_PASSWORD",
+        "$2a$10$IXHfyQSclupPXbqi7RbAW..j8/ZU8WkwyoQHtZiHRfjnsjCBlVE5u",
+    )  # Default: Password123!
+
+    ADMIN_EMAIL = os.getenv("SEED_ADMIN_EMAIL", "admin@amalitech.com")
+    ADMIN_NAME = os.getenv("SEED_ADMIN_NAME", "Admin User")
+    TEST_USER_EMAIL = os.getenv("SEED_USER_EMAIL", "user@amalitech.com")
+    TEST_USER_NAME = os.getenv("SEED_USER_NAME", "Test User")
 
     # Always include known accounts for testing
     fixed_users = [
         {
-            "email": "admin@amalitech.com",
-            "name": "Admin User",
+            "email": ADMIN_EMAIL,
+            "name": ADMIN_NAME,
             "password": BCRYPT_PASSWORD,
             "role": "ADMIN",
             "auth_provider": "MANUAL",
@@ -128,8 +136,8 @@ def upsert_users(conn: Connection, n_users: int) -> List[int]:
             "updated_at": rand_ts(60),
         },
         {
-            "email": "user@amalitech.com",
-            "name": "Test User",
+            "email": TEST_USER_EMAIL,
+            "name": TEST_USER_NAME,
             "password": BCRYPT_PASSWORD,
             "role": "USER",
             "auth_provider": "MANUAL",
