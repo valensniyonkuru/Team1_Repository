@@ -206,6 +206,8 @@ def load_analytics(df: pd.DataFrame, table_name: str) -> None:
         return
     try:
         with engine.connect() as conn:
+            conn = conn.execution_options(isolation_level="AUTOCOMMIT")
+            
             table_exists = conn.execute(text("""
                 SELECT EXISTS (
                     SELECT FROM information_schema.tables 
@@ -217,8 +219,8 @@ def load_analytics(df: pd.DataFrame, table_name: str) -> None:
                 conn.execute(text(f"TRUNCATE TABLE {table_name}"))
                 log.info("Truncated table %s", table_name)
 
-        df.to_sql(table_name, engine, if_exists="append", index=False)
-        log.info("Loaded %d rows into %s", len(df), table_name)
+            df.to_sql(table_name, conn, if_exists="append", index=False)
+            log.info("Loaded %d rows into %s", len(df), table_name)
     except Exception as e:
         log.error("Failed to load analytics table %s: %s", table_name, e)
         raise
