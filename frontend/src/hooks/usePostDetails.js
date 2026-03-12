@@ -1,9 +1,11 @@
 import { useState, useCallback, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { postAPI, commentAPI } from "../services/api";
 import { useToast } from "../context/ToastContext";
 
 export function usePostDetails(id) {
   const { showToast } = useToast();
+  const navigate = useNavigate();
   const [post, setPost] = useState(null);
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -65,6 +67,17 @@ export function usePostDetails(id) {
     }
   };
 
+  const handleDeletePost = async () => {
+    try {
+      await postAPI.delete(id);
+      showToast("Post deleted", "success");
+      navigate("/");
+    } catch (err) {
+      const message = err.response?.data?.message || "Failed to delete post.";
+      showToast(message, "error");
+    }
+  };
+
   return {
     post,
     comments,
@@ -77,5 +90,6 @@ export function usePostDetails(id) {
     commentError,
     handleAddComment,
     handleDeleteConfirm,
+    handleDeletePost,
   };
 }

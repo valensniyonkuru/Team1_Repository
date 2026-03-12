@@ -13,7 +13,7 @@ const LoginForm = ({ email, password, setEmail, setPassword, error, setError, ha
           <label htmlFor="login-email" className="font-inter text-sm font-medium leading-normal text-ping-body-primary">
             Email
           </label>
-          <div className={`flex items-center gap-2.5 rounded-lg border px-4 py-3 ${error ? "border-ping-error-border bg-ping-error-bg" : "border-ping-input-border bg-ping-input-bg"}`}>
+          <div className={`flex items-center gap-2.5 rounded-lg border px-4 py-3 transition-colors focus-within:border-ping-dark focus-within:bg-white ${error ? "border-ping-error-border bg-ping-error-bg" : "border-ping-input-border bg-ping-input-bg"}`}>
             <MailIcon color={error ? "#c81e1e" : "#5a6f7c"} />
             <input
               id="login-email"
@@ -41,7 +41,7 @@ const LoginForm = ({ email, password, setEmail, setPassword, error, setError, ha
           <label htmlFor="login-password" className="font-inter text-sm font-medium leading-normal text-ping-body-primary">
             Password
           </label>
-          <div className="flex items-center gap-2.5 rounded-lg border border-ping-input-border bg-ping-input-bg px-4 py-3">
+          <div className="flex items-center gap-2.5 rounded-lg border border-ping-input-border bg-ping-input-bg px-4 py-3 transition-colors focus-within:border-ping-dark focus-within:bg-white">
             <LockIcon />
             <input
               id="login-password"
