@@ -39,7 +39,7 @@ jobs:
             ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_NAMESPACE }}/communityboard-backend:staging
             ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_NAMESPACE }}/communityboard-backend:staging-${{ github.sha }}
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-to: type=gha,mode=max,ignore-error=true
           provenance: false
 
       - name: Build and push frontend image
@@ -52,7 +52,7 @@ jobs:
             ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_NAMESPACE }}/communityboard-frontend:staging
             ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_NAMESPACE }}/communityboard-frontend:staging-${{ github.sha }}
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-to: type=gha,mode=max,ignore-error=true
           provenance: false
 
       - name: Build and push ETL image
@@ -65,7 +65,7 @@ jobs:
             ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_NAMESPACE }}/communityboard-etl:staging
             ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_NAMESPACE }}/communityboard-etl:staging-${{ github.sha }}
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-to: type=gha,mode=max,ignore-error=true
           provenance: false
 
   deploy:
