@@ -8,6 +8,8 @@ import com.amalitech.communityboard.model.Category;
 import com.amalitech.communityboard.repository.CategoryRepository;
 import com.amalitech.communityboard.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,8 +24,14 @@ public class CategoryService {
     private final PostRepository postRepository;
 
     @Transactional(readOnly = true)
+    @Cacheable("categories")
+    public List<Category> getCategories() {
+        return categoryRepository.findAll();
+    }
+
+    @Transactional(readOnly = true)
     public List<CategoryResponse> getAllCategories() {
-        return categoryRepository.findAll().stream()
+        return getCategories().stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
@@ -36,6 +44,7 @@ public class CategoryService {
     }
 
     @Transactional
+    @CacheEvict(value = "categories", allEntries = true)
     public CategoryResponse createCategory(CategoryRequest request) {
         String name = request.getName().trim();
         if (categoryRepository.findByName(name).isPresent()) {
@@ -49,6 +58,7 @@ public class CategoryService {
     }
 
     @Transactional
+    @CacheEvict(value = "categories", allEntries = true)
     public CategoryResponse updateCategory(Long id, CategoryRequest request) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Category not found"));
@@ -64,6 +74,7 @@ public class CategoryService {
     }
 
     @Transactional
+    @CacheEvict(value = "categories", allEntries = true)
     public void deleteCategory(Long id) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Category not found"));

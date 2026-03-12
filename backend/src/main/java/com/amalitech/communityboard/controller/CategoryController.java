@@ -1,7 +1,7 @@
 package com.amalitech.communityboard.controller;
 
 import com.amalitech.communityboard.model.Category;
-import com.amalitech.communityboard.repository.CategoryRepository;
+import com.amalitech.communityboard.service.CategoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -12,11 +12,11 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CategoryController {
 
-    private final CategoryRepository categoryRepository;
+    private final CategoryService categoryService;
 
     @GetMapping
     public ResponseEntity<List<Category>> getAllCategories() {
-        return ResponseEntity.ok(categoryRepository.findAll());
+        return ResponseEntity.ok(categoryService.getCategories());
     }
 
 }
