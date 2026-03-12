@@ -87,28 +87,53 @@ jobs:
       - name: Find running staging instances
         id: find-instances
         run: |
-          INSTANCE_IDS=$(aws ec2 describe-instances \
+          # Get all running EC2 instances tagged as staging
+          ALL_IDS=$(aws ec2 describe-instances \
             --filters \
               "Name=tag:Environment,Values=staging" \
               "Name=instance-state-name,Values=running" \
             --query "Reservations[].Instances[].InstanceId" \
             --output text)
 
-          if [ -z "$INSTANCE_IDS" ]; then
+          if [ -z "$ALL_IDS" ]; then
             echo "❌ No running staging instances found. Is the ASG running?"
             exit 1
           fi
 
-          echo "Found instances: $INSTANCE_IDS"
-          # SSM send-command needs space-separated list
-          echo "instance_ids=$INSTANCE_IDS" >> $GITHUB_OUTPUT
+          echo "All running instances: $ALL_IDS"
+
+          # Filter to only instances that are registered and Online with SSM
+          SSM_INSTANCE_IDS=""
+          for ID in $ALL_IDS; do
+            PING=$(aws ssm describe-instance-information \
+              --filters "Key=InstanceIds,Values=$ID" \
+              --query "InstanceInformationList[0].PingStatus" \
+              --output text 2>/dev/null || echo "None")
+            if [ "$PING" = "Online" ]; then
+              SSM_INSTANCE_IDS="$SSM_INSTANCE_IDS $ID"
+              echo "  ✅ $ID — SSM Online"
+            else
+              echo "  ⚠️  $ID — SSM status: $PING (skipping, no IAM profile or agent not ready)"
+            fi
+          done
+
+          SSM_INSTANCE_IDS=$(echo $SSM_INSTANCE_IDS | xargs)
+
+          if [ -z "$SSM_INSTANCE_IDS" ]; then
+            echo "❌ No SSM-managed instances found. Run 'terraform apply' to create the IAM instance profile."
+            exit 1
+          fi
+
+          echo "SSM-managed instances: $SSM_INSTANCE_IDS"
+          echo "instance_ids=$SSM_INSTANCE_IDS" >> $GITHUB_OUTPUT
 
       - name: Deploy via SSM Run Command
         id: ssm-deploy
         run: |
+          INSTANCE_IDS="${{ steps.find-instances.outputs.instance_ids }}"
           COMMAND_ID=$(aws ssm send-command \
             --document-name "AWS-RunShellScript" \
-            --targets "Key=tag:Environment,Values=staging" \
+            --instance-ids $INSTANCE_IDS \
             --parameters commands="[
               \"set -e\",
               \"echo 'Deploying to staging environment...'\",
