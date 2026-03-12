@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { authAPI } from "../services/api";
 import { useAuth } from "../context/AuthContext";
+import { useToast } from "../context/ToastContext";
 import LoginForm from "../components/LoginForm";
 
 const Login = () => {
@@ -11,6 +12,7 @@ const Login = () => {
   const [error, setError] = useState("");
   const navigate = useNavigate();
   const { login } = useAuth();
+  const { showToast } = useToast();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -22,6 +24,7 @@ const Login = () => {
       const refreshToken = payload.refreshToken;
 
       login({ name: payload.name, email: payload.email, role: payload.role }, token, refreshToken);
+      showToast("Authenticated successfully", "success");
       navigate("/");
     } catch (err) {
       if (err.response?.data?.message) {

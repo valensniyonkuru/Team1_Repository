@@ -90,14 +90,37 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      target: dev
     container_name: communityboard-frontend-dev
     restart: unless-stopped
+    environment:
+      # Enable file-system polling so CRA detects changes inside Docker on Windows/WSL
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
+      - WDS_SOCKET_PORT=3000
+      # Proxy target reachable on the Docker network
+      - REACT_APP_BACKEND_URL=http://backend:8080
+    volumes:
+      # Mount source so edits on the host are reflected instantly (no rebuild needed)
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
     ports:
       - "3000:3000"
     depends_on:
       - backend
     networks:
       - communityboard-dev
+    # Docker Compose Watch (alternative to volumes — run with: docker compose watch)
+    develop:
+      watch:
+        - action: sync
+          path: ./frontend/src
+          target: /app/src
+        - action: sync
+          path: ./frontend/public
+          target: /app/public
+        - action: rebuild
+          path: ./frontend/package.json
     logging:
       driver: "json-file"
       options:

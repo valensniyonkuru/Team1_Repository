@@ -1,235 +1,13 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { postAPI } from "../services/api";
-import { Link } from "react-router-dom";
-
-/* ─── SVG Icon Components ──────────────────────────────────── */
-
-const SearchIcon = ({ color = "#395362", size = 16 }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke={color}
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <circle cx="11" cy="11" r="8" />
-    <path d="m21 21-4.3-4.3" />
-  </svg>
-);
-
-const CloseIcon = () => (
-  <svg
-    width="16"
-    height="16"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="#395362"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M18 6 6 18M6 6l12 12" />
-  </svg>
-);
-
-const PlusIcon = () => (
-  <svg
-    width="20"
-    height="20"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="#fdfdfd"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M5 12h14M12 5v14" />
-  </svg>
-);
-
-const ClockIcon = () => (
-  <svg
-    width="16"
-    height="16"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="#5a6f7c"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <circle cx="12" cy="12" r="10" />
-    <polyline points="12 6 12 12 16 14" />
-  </svg>
-);
-
-const CommentIcon = () => (
-  <svg
-    width="16"
-    height="16"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="#395362"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />
-    <path d="M8 12h.01M12 12h.01M16 12h.01" />
-  </svg>
-);
-
-/* ─── Category Badge Color Map ────────────────────────────── */
-
-const CATEGORY_COLORS = {
-  Events: {
-    bg: "bg-ping-badge-purple-bg",
-    border: "border-ping-badge-purple-border",
-    text: "text-ping-badge-purple-text",
-  },
-  "Lost & Found": {
-    bg: "bg-ping-badge-red-bg",
-    border: "border-ping-badge-red-border",
-    text: "text-ping-badge-red-text",
-  },
-  Recommendations: {
-    bg: "bg-ping-badge-green-bg",
-    border: "border-ping-badge-green-border",
-    text: "text-ping-badge-green-text",
-  },
-  "Help Requests": {
-    bg: "bg-ping-badge-yellow-bg",
-    border: "border-ping-badge-yellow-border",
-    text: "text-ping-badge-yellow-text",
-  },
-};
-
-const getDefaultColors = () => ({
-  bg: "bg-gray-100",
-  border: "border-gray-300",
-  text: "text-gray-600",
-});
-
-/* ─── Helper: Relative Time ──────────────────────────────── */
-
-function timeAgo(dateString) {
-  const now = new Date();
-  const date = new Date(dateString);
-  const seconds = Math.floor((now - date) / 1000);
-
-  if (seconds < 60) return "just now";
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60)
-    return `about ${minutes} minute${minutes > 1 ? "s" : ""} ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `about ${hours} hour${hours > 1 ? "s" : ""} ago`;
-  const days = Math.floor(hours / 24);
-  if (days === 1) return "1 day ago";
-  return `${days} days ago`;
-}
-
-/* ─── Post Card Component ────────────────────────────────── */
-
-const PostCard = ({ title, body, category, author, time, commentCount }) => {
-  const colors = CATEGORY_COLORS[category] || getDefaultColors();
-
-  return (
-    <article className="bg-ping-bg border border-ping-stroke rounded-[14px] px-4 py-6 md:p-6 w-full font-inter">
-      {/* Header: Title + Badge */}
-      <div className="flex items-center justify-between gap-4">
-        <h2 
-          data-testid="post-title"
-          className="flex-1 text-xl font-semibold leading-[1.5] text-ping-heading"
-        >
-          {title}
-        </h2>
-        {category && (
-          <span
-            data-testid="post-category"
-            className={`shrink-0 inline-flex items-center justify-center px-3 py-0.5 rounded-md border text-sm font-medium leading-[1.5] ${colors.bg} ${colors.border} ${colors.text}`}
-          >
-            {category}
-          </span>
-        )}
-      </div>
-
-      {/* Body */}
-      <p 
-        data-testid="post-content"
-        className="mt-3 text-base font-normal leading-[1.5] text-ping-body line-clamp-2"
-      >
-        {body}
-      </p>
-
-      {/* Footer */}
-      <div className="mt-3 pt-2 border-t border-ping-stroke flex items-center justify-between">
-        {/* Left: Author + Time */}
-        <div className="flex items-center gap-4">
-          <span className="text-sm font-medium text-ping-body">{author}</span>
-          <div className="flex items-center gap-1">
-            <ClockIcon />
-            <span className="text-sm font-normal text-ping-placeholder">
-              {time}
-            </span>
-          </div>
-        </div>
-
-        {/* Right: Comments */}
-        <div className="flex items-center gap-1.5">
-          <CommentIcon />
-          <span className="text-base font-semibold text-ping-body">
-            {commentCount}
-          </span>
-        </div>
-      </div>
-    </article>
-  );
-};
-
-/* ─── Pagination Component ───────────────────────────────── */
-
-const Pagination = ({ currentPage, totalPages, onPageChange }) => {
-  const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
-
-  return (
-    <div className="flex items-center self-end border border-ping-stroke rounded overflow-hidden font-inter">
-      <button
-        onClick={() => onPageChange(Math.max(1, currentPage - 1))}
-        disabled={currentPage === 1}
-        className="px-3 py-1.5 text-sm font-medium text-ping-body-primary bg-ping-bg hover:bg-gray-50 transition-colors disabled:opacity-50"
-      >
-        Previous
-      </button>
-      {pages.map((page) => (
-        <button
-          key={page}
-          onClick={() => onPageChange(page)}
-          className={`px-3 py-1.5 text-sm font-medium border-l border-ping-stroke transition-colors ${
-            currentPage === page
-              ? "bg-ping-dark text-ping-bg"
-              : "bg-ping-bg text-ping-body-primary hover:bg-gray-50"
-          }`}
-        >
-          {page}
-        </button>
-      ))}
-      <button
-        onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
-        disabled={currentPage === totalPages}
-        className="px-3 py-1.5 text-sm font-medium text-ping-body-primary bg-ping-bg border-l border-ping-stroke hover:bg-gray-50 transition-colors disabled:opacity-50"
-      >
-        Next
-      </button>
-    </div>
-  );
-};
-
-/* ─── Home Page ──────────────────────────────────────────── */
+import CreatePostModal from "../components/CreatePostModal";
+import PostCard from "../components/PostCard";
+import Pagination from "../components/Pagination";
+import { timeAgo } from "../utils/formatDate";
+import { SearchIcon, CloseIcon, PlusIcon } from "../components/icons";
 
 const Home = () => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -245,7 +23,8 @@ const Home = () => {
     "Help Requests",
   ];
 
-  useEffect(() => {
+  const fetchPosts = useCallback(() => {
+    setLoading(true);
     postAPI
       .getAll(currentPage - 1, 10)
       .then((res) => {
@@ -256,6 +35,10 @@ const Home = () => {
       .catch((err) => console.error("Failed to load posts", err))
       .finally(() => setLoading(false));
   }, [currentPage]);
+
+  useEffect(() => {
+    fetchPosts();
+  }, [fetchPosts]);
 
   const filteredPosts = posts.filter(
     (p) =>
@@ -302,15 +85,15 @@ const Home = () => {
           </div>
 
           {/* Create post button */}
-          <Link
-            to="/create-post"
+          <button
+            onClick={() => setIsModalOpen(true)}
             className="w-full md:w-auto bg-ping-dark rounded-lg px-5 py-2.5 flex items-center justify-center gap-2 flex-shrink-0 transition-colors hover:bg-opacity-90 group"
           >
             <PlusIcon />
             <span className="font-medium text-sm text-ping-bg leading-[1.5]">
               Create post
             </span>
-          </Link>
+          </button>
         </div>
 
         {/* ── Category Filters ─────────────────────────── */}
@@ -353,6 +136,7 @@ const Home = () => {
               {filteredPosts.map((post) => (
                 <PostCard
                   key={post.id}
+                  id={post.id}
                   title={post.title}
                   body={post.content}
                   category={post.categoryName}
@@ -372,6 +156,11 @@ const Home = () => {
           </div>
         )}
       </div>
+      <CreatePostModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onPostCreated={fetchPosts}
+      />
     </div>
   );
 };
