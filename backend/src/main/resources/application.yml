@@ -41,9 +41,11 @@ jwt:
 
 app:
   frontend-url: ${FRONTEND_URL:http://localhost:3000}
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:${app.frontend-url}}
 
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}
 
 management:
   health:

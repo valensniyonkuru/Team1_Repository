@@ -8,6 +8,7 @@ const Navbar = () => {
   const { user, logout } = useAuth();
   const location = useLocation();
   const isAnalytics = location.pathname === "/analytics";
+  const isAdmin = user?.role?.replace("ROLE_", "") === "ADMIN";
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Prevent scrolling when mobile menu is open
@@ -50,6 +51,7 @@ const Navbar = () => {
       <div className="hidden md:flex items-center gap-5">
         {user ? (
           <>
+            {isAdmin && (
             <div className="hidden sm:flex items-center gap-5">
               <Link
                 to="/analytics"
@@ -67,6 +69,7 @@ const Navbar = () => {
                 </span>
               </Link>
             </div>
+            )}
 
             <Link to="/profile" className="hidden items-center gap-2.5 sm:flex rounded-lg px-2 py-1 transition-colors hover:bg-gray-100">
               <div className="flex size-8 shrink-0 flex-col items-center justify-center rounded-full bg-[#c3c3c2]">
@@ -168,6 +171,7 @@ const Navbar = () => {
                       Profile
                     </span>
                   </Link>
+                  {isAdmin && (
                   <Link
                     to="/analytics"
                     onClick={handleLinkClick}
@@ -184,6 +188,7 @@ const Navbar = () => {
                       Analytics
                     </span>
                   </Link>
+                  )}
                   <div className="w-full border-t border-ping-stroke"></div>
                   <button
                     onClick={() => {

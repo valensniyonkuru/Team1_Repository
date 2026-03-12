@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
-import { postAPI } from "../services/api";
+import { analyticsAPI } from "../services/api";
 
 const DAY_ORDER = ["Mon", "Tues", "Wed", "Thurs", "Fri", "Sat", "Sun"];
 const DAY_INDEX_MAP = { 0: "Sun", 1: "Mon", 2: "Tues", 3: "Wed", 4: "Thurs", 5: "Fri", 6: "Sat" };
@@ -9,50 +9,53 @@ export { DAY_ORDER };
 export function useAnalytics() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const fetchAnalytics = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await postAPI.getAll(0, 500);
-      const payload = res.data?.data || res.data;
-      const posts = payload?.content || (Array.isArray(payload) ? payload : []);
-      const totalPosts = payload?.totalElements ?? posts.length;
-      const totalComments = posts.reduce((sum, p) => sum + (p.commentCount ?? 0), 0);
+      setError(null);
 
-      const catCounts = {};
-      posts.forEach((p) => {
-        if (p.categoryName) catCounts[p.categoryName] = (catCounts[p.categoryName] ?? 0) + 1;
-      });
-      const categoryLabels = Object.keys(catCounts).sort((a, b) => a.localeCompare(b));
+      const res = await analyticsAPI.getOverview();
+      const overview = res.data?.data || res.data;
 
-      const dayCounts = {};
-      DAY_ORDER.forEach((d) => (dayCounts[d] = 0));
-      posts.forEach((p) => {
-        if (p.createdAt) {
-          const dayLabel = DAY_INDEX_MAP[new Date(p.createdAt).getDay()];
-          if (dayLabel) dayCounts[dayLabel] = (dayCounts[dayLabel] ?? 0) + 1;
+      const categoryTrends = overview?.categoryTrends ?? [];
+      const dailyActivity = overview?.dailyActivity ?? [];
+      const topContributors = overview?.topContributors ?? [];
+      const userEngagement = overview?.userEngagement ?? [];
+
+      // Total posts = sum of all category post counts
+      const totalPosts = categoryTrends.reduce((sum, c) => sum + (c.totalPosts ?? 0), 0);
+
+      // Total comments = sum of each user's commentsMade
+      const totalComments = userEngagement.reduce((sum, u) => sum + (u.commentsMade ?? 0), 0);
+
+      // Category chart — sorted alphabetically for consistent axis order
+      const categoryLabels = [...categoryTrends]
+        .sort((a, b) => a.category.localeCompare(b.category))
+        .map((c) => c.category);
+      const catCountMap = Object.fromEntries(categoryTrends.map((c) => [c.category, c.totalPosts]));
+      const catBars = categoryLabels.map((label) => catCountMap[label] ?? 0);
+
+      // Day-of-week chart — aggregate postCount across all categories
+      const dayCounts = Object.fromEntries(DAY_ORDER.map((d) => [d, 0]));
+      dailyActivity.forEach((item) => {
+        if (item.date) {
+          const dayLabel = DAY_INDEX_MAP[new Date(item.date).getDay()];
+          if (dayLabel) dayCounts[dayLabel] += item.postCount ?? 0;
         }
       });
+      const dayBars = DAY_ORDER.map((d) => dayCounts[d]);
 
-      const authorCounts = {};
-      posts.forEach((p) => {
-        if (p.authorName) authorCounts[p.authorName] = (authorCounts[p.authorName] ?? 0) + 1;
-      });
-      const topContributors = Object.entries(authorCounts)
-        .sort((a, b) => b[1] - a[1])
+      // Top contributors — use postsCreated as the displayed count
+      const mappedContributors = topContributors
         .slice(0, 10)
-        .map(([name, count]) => ({ name, count }));
+        .map((c) => ({ name: c.authorName, count: c.postsCreated ?? 0 }));
 
-      setStats({
-        totalPosts,
-        totalComments,
-        categoryLabels,
-        catBars: categoryLabels.map((c) => catCounts[c]),
-        dayBars: DAY_ORDER.map((d) => dayCounts[d]),
-        topContributors,
-      });
+      setStats({ totalPosts, totalComments, categoryLabels, catBars, dayBars, topContributors: mappedContributors });
     } catch (err) {
       console.error("Failed to load analytics:", err);
+      setError(err);
     } finally {
       setLoading(false);
     }
@@ -62,5 +65,5 @@ export function useAnalytics() {
     fetchAnalytics();
   }, [fetchAnalytics]);
 
-  return { stats, loading };
+  return { stats, loading, error };
 }

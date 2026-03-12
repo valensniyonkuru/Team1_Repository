@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API = axios.create({ baseURL: "/api" });
+const API = axios.create({ baseURL: process.env.REACT_APP_API_BASE_URL || "/api" });
 
 const AUTH_PUBLIC_PATHS = [
   "/auth/login",
@@ -94,6 +94,7 @@ export const authAPI = {
 
 export const postAPI = {
   getAll: (page = 0, size = 10) => API.get(`/posts?page=${page}&size=${size}`),
+  search: (params) => API.get("/posts/search", { params }),
   getById: (id) => API.get(`/posts/${id}`),
   create: (data) => API.post("/posts", data),
   update: (id, data) => API.put(`/posts/${id}`, data),
@@ -116,6 +117,10 @@ export const accountAPI = {
   changePassword: (data) => API.put("/account/change-password", data),
   changeEmail: (data) => API.put("/account/change-email", data),
   deleteAccount: () => API.delete("/account/delete-account"),
+};
+
+export const analyticsAPI = {
+  getOverview: () => API.get("/analytics"),
 };
 
 export default API;

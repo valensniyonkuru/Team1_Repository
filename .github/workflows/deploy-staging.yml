@@ -145,6 +145,8 @@ jobs:
               \"DB_PASSWORD=${{ secrets.STAGING_DB_PASSWORD }}\",
               \"JWT_SECRET=${{ secrets.STAGING_JWT_SECRET }}\",
               \"REACT_APP_API_URL=${{ secrets.STAGING_API_URL }}\",
+              \"FRONTEND_URL=${{ secrets.STAGING_FRONTEND_URL }}\",
+              \"CORS_ALLOWED_ORIGINS=${{ secrets.STAGING_CORS_ALLOWED_ORIGINS }}\",
               \"DOCKER_REGISTRY=${{ env.DOCKER_REGISTRY }}\",
               \"DOCKER_NAMESPACE=${{ env.DOCKER_NAMESPACE }}\",
               \"MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}\",
