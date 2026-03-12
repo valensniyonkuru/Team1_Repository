@@ -50,17 +50,23 @@ def ensure_categories(conn: Connection) -> List[int]:
     ]
 
     # Inspect category table columns
-    cols = conn.execute(text("""
-        SELECT column_name
-        FROM information_schema.columns
-        WHERE table_name = 'categories'
-        ORDER BY ordinal_position
-    """)).fetchall()
-    col_names = {r[0] for r in cols}
-
+    col_names = {
+        r[0] for r in conn.execute(text("""
+            SELECT column_name FROM information_schema.columns
+            WHERE table_name = 'categories'
+        """)).fetchall()
+    }
     has_description = "description" in col_names
 
-    for category_id, name, description in required:
+    # Get existing names
+    existing_names = {
+        r[0] for r in conn.execute(text("SELECT name FROM categories;")).fetchall()
+    }
+
+    # insert missing missing categories
+    missing = [(cid, name, desc) for cid, name, desc in required if name not in existing_names]
+
+    if missing:
         if has_description:
             conn.execute(
                 text("""
@@ -70,27 +76,21 @@ def ensure_categories(conn: Connection) -> List[int]:
                         name = EXCLUDED.name,
                         description = EXCLUDED.description
                 """),
-                {
-                    "id": category_id,
-                    "name": name,
-                    "description": description,
-                },
+                [{"id": cid, "name": name, "description": desc} for cid, name, desc in missing],
             )
         else:
             conn.execute(
                 text("""
                     INSERT INTO categories (id, name)
                     VALUES (:id, :name)
-                    ON CONFLICT (id) DO UPDATE SET
-                        name = EXCLUDED.name
+                    ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name
                 """),
-                {
-                    "id": category_id,
-                    "name": name,
-                },
+                [{"id": cid, "name": name} for cid, name, _ in missing],
             )
 
-    rows = conn.execute(text("SELECT id FROM categories ORDER BY id;")).fetchall()
+    rows = conn.execute(
+        text("SELECT id FROM categories WHERE name IN ('NEWS', 'EVENT', 'DISCUSSION', 'ALERT') ORDER BY id;")
+    ).fetchall()
     ids = [r[0] for r in rows]
 
     if not ids:
@@ -109,13 +109,21 @@ def clear_existing_data(conn: Connection) -> None:
 def upsert_users(conn: Connection, n_users: int) -> List[int]:
     """Insert or update users by unique email; returns all user IDs."""
     users = []
-    BCRYPT_PASSWORD = "$2a$10$IXHfyQSclupPXbqi7RbAW..j8/ZU8WkwyoQHtZiHRfjnsjCBlVE5u"  # Password123!
+    BCRYPT_PASSWORD = os.getenv(
+        "SEED_BCRYPT_PASSWORD",
+        "$2a$10$IXHfyQSclupPXbqi7RbAW..j8/ZU8WkwyoQHtZiHRfjnsjCBlVE5u",
+    )  # Default: Password123!
+
+    ADMIN_EMAIL = os.getenv("SEED_ADMIN_EMAIL", "admin@amalitech.com")
+    ADMIN_NAME = os.getenv("SEED_ADMIN_NAME", "Admin User")
+    TEST_USER_EMAIL = os.getenv("SEED_USER_EMAIL", "user@amalitech.com")
+    TEST_USER_NAME = os.getenv("SEED_USER_NAME", "Test User")
 
     # Always include known accounts for testing
     fixed_users = [
         {
-            "email": "admin@amalitech.com",
-            "name": "Admin User",
+            "email": ADMIN_EMAIL,
+            "name": ADMIN_NAME,
             "password": BCRYPT_PASSWORD,
             "role": "ADMIN",
             "auth_provider": "MANUAL",
@@ -128,8 +136,8 @@ def upsert_users(conn: Connection, n_users: int) -> List[int]:
             "updated_at": rand_ts(60),
         },
         {
-            "email": "user@amalitech.com",
-            "name": "Test User",
+            "email": TEST_USER_EMAIL,
+            "name": TEST_USER_NAME,
             "password": BCRYPT_PASSWORD,
             "role": "USER",
             "auth_provider": "MANUAL",
@@ -304,12 +312,10 @@ def insert_posts(conn: Connection, user_ids: List[int], category_ids: List[int],
             }
         )
 
-    seq_records = conn.execute(text(f"SELECT nextval('posts_seq') FROM generate_series(1, {len(posts)})")).fetchall()
-    post_ids = [r[0] for r in seq_records]
-    for i, post in enumerate(posts):
-        post["id"] = post_ids[i]
+    post_ids = [r[0] for r in conn.execute(text(f"SELECT nextval('posts_seq') FROM generate_series(1, {len(posts)})")).fetchall()]
 
     df = pd.DataFrame(posts)
+    df.insert(0, "id", post_ids)
     df.to_sql("posts", conn, if_exists="append", index=False, method="multi")
 
     return post_ids
@@ -322,15 +328,29 @@ def insert_comments(conn: Connection, user_ids: List[int], post_ids: List[int], 
     # Pre-fetch sequences
     seq_records = conn.execute(text(f"SELECT nextval('comments_seq') FROM generate_series(1, {n_comments})")).fetchall()
     comment_ids = [r[0] for r in seq_records]
+    rows = conn.execute(text("SELECT id, created_at FROM posts;")).fetchall()
+    post_created_at = {r[0]: r[1] for r in rows}
 
     for i in range(n_comments):
+        post_id = RNG.choice(post_ids)
+        post_ts = post_created_at[post_id]
+        
+        # Comment must be after the post was created
+        now = datetime.utcnow()
+        max_days = max(1, (now - post_ts).days)
+        created_at = post_ts + timedelta(
+            days=RNG.randint(0, max_days),
+            hours=RNG.randint(0, 23),
+            minutes=RNG.randint(0, 59),
+        )
+        created_at = min(created_at, now) # Clamping the ts to now
         comments.append(
             {
                 "id": comment_ids[i],
                 "content": fake.sentence(nb_words=10).rstrip("."),
-                "created_at": rand_ts(40),
+                "created_at": created_at,
                 "author_id": RNG.choice(user_ids),
-                "post_id": RNG.choice(post_ids),
+                "post_id": post_id,
             }
         )
 

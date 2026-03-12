@@ -6,7 +6,7 @@
 TERRAFORM_DIR := terraform
 STAGING_ENV := staging
 PROD_ENV := production
-AWS_REGION := eu-north-1
+AWS_REGION ?= eu-north-1
 
 help: ## Show this help message
 	@echo "Community Board DevOps Operations"

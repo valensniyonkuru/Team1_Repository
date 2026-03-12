@@ -9,6 +9,8 @@ import com.amalitech.communityboard.repository.*;
 import com.amalitech.communityboard.service.mapper.PostSearchMapper;
 import com.amalitech.communityboard.specs.PostSpecification;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -45,6 +47,7 @@ public class PostService {
     }
 
     @Transactional
+    @CacheEvict(value = "posts", allEntries = true)
     public PostResponse createPost(PostRequest request, User author) {
         if (author == null) {
             throw new UnauthorizedException("You must be logged in to create a post");
@@ -83,6 +86,7 @@ public class PostService {
         post.setCategory(resolveCategory(request.getCategoryId()));
         return toResponse(postRepository.save(post));
     }
+
 
     @Transactional
     @PreAuthorize("hasRole('ADMIN') or #author.id == principal.id ")

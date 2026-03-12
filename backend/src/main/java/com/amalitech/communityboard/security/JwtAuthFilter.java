@@ -55,10 +55,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             }
 
             String email = jwtService.extractEmail(token);
-            int tokenVersion = jwtService.extractVersion(token);
 
             userRepository.findByEmailAndDeletedAtIsNull(email)
-                    .filter(user -> !user.isAccountLocked() && user.getTokenVersion() == tokenVersion)
+                    .filter(user -> !user.isAccountLocked())
                     .ifPresent(user -> {
                         var auth = new UsernamePasswordAuthenticationToken(
                                 user, null,

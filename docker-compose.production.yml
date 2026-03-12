@@ -1,4 +1,6 @@
-version: "3.8"
+# docker-compose.production.yml — Production Environment (main branch)
+# Usage: docker compose -f docker-compose.production.yml up -d
+# Required env vars: DB_PASSWORD, JWT_SECRET, DOCKER_REGISTRY, DOCKER_NAMESPACE, REACT_APP_API_URL, MAIL_USERNAME, MAIL_PASSWORD
 
 services:
   postgres:
@@ -26,6 +28,24 @@ services:
         max-size: "10m"
         max-file: "5"
 
+  redis:
+    image: redis:7-alpine
+    container_name: communityboard-redis-prod
+    restart: always
+    # No host port exposure — Redis is internal only
+    networks:
+      - communityboard-prod
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+
   backend:
     image: ${DOCKER_REGISTRY}/${DOCKER_NAMESPACE}/communityboard-backend:latest
     build:
@@ -39,12 +59,22 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       JWT_SECRET: ${JWT_SECRET}
-      SERVER_PORT: 8080
+      SERVER_PORT: ${SERVER_PORT:-8080}
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES:-production}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REACT_APP_BACKEND_URL: ${REACT_APP_BACKEND_URL}
+      FRONTEND_URL: ${FRONTEND_URL}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
+
     ports:
       - "8080:8080"
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     networks:
       - communityboard-prod
@@ -74,7 +104,7 @@ services:
     networks:
       - communityboard-prod
     environment:
-      REACT_APP_API_URL: ${REACT_APP_API_URL:-http://api.example.com}
+      REACT_APP_API_URL: ${REACT_APP_API_URL}
     logging:
       driver: "json-file"
       options:
@@ -87,13 +117,17 @@ services:
       context: .
       dockerfile: data-engineering/Dockerfile.prod
     container_name: communityboard-etl-prod
-    restart: always
+    restart: on-failure
     environment:
       DB_HOST: postgres
       DB_PORT: "5432"
       DB_NAME: ${DB_NAME:-communityboard}
       DB_USER: ${DB_USER:-postgres}
       DB_PASSWORD: ${DB_PASSWORD}
+      SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL}
+      SEED_ADMIN_NAME: ${SEED_ADMIN_NAME:-Admin User}
+      SEED_USER_EMAIL: ${SEED_USER_EMAIL}
+      SEED_USER_NAME: ${SEED_USER_NAME:-Test User}
     depends_on:
       postgres:
         condition: service_healthy

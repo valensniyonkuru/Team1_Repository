@@ -27,3 +27,8 @@ output "security_group_id" {
   description = "Security group ID"
   value       = var.security_group_id
 }
+
+output "iam_instance_profile_arn" {
+  description = "IAM instance profile ARN (used by SSM)"
+  value       = aws_iam_instance_profile.ec2_ssm.arn
+}

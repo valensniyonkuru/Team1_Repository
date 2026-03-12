@@ -90,7 +90,7 @@ jobs:
             ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_NAMESPACE }}/communityboard-backend:latest
             ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_NAMESPACE }}/communityboard-backend:v${{ github.run_number }}
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-to: type=gha,mode=max,ignore-error=true
           provenance: false
 
       - name: Build and push frontend image
@@ -103,7 +103,7 @@ jobs:
             ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_NAMESPACE }}/communityboard-frontend:latest
             ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_NAMESPACE }}/communityboard-frontend:v${{ github.run_number }}
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-to: type=gha,mode=max,ignore-error=true
           provenance: false
 
       - name: Build and push ETL image
@@ -116,7 +116,7 @@ jobs:
             ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_NAMESPACE }}/communityboard-etl:latest
             ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_NAMESPACE }}/communityboard-etl:v${{ github.run_number }}
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-to: type=gha,mode=max,ignore-error=true
           provenance: false
 
   deploy:
@@ -182,27 +182,32 @@ jobs:
           SPRING_PROFILES=production
           JWT_SECRET=${{ secrets.PRODUCTION_JWT_SECRET }}
           REACT_APP_API_URL=${{ secrets.PRODUCTION_API_URL }}
+          FRONTEND_URL=${{ secrets.PRODUCTION_FRONTEND_URL }}
+          CORS_ALLOWED_ORIGINS=${{ secrets.PRODUCTION_CORS_ALLOWED_ORIGINS }}
           DOCKER_REGISTRY=${{ env.DOCKER_REGISTRY }}
           DOCKER_NAMESPACE=${{ env.DOCKER_NAMESPACE }}
+          MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}
+          MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}
           ENVEOF
+          chmod 600 /opt/app/.env
 
           # Backup current state
           echo "Creating backup of current deployment..."
-          sudo docker-compose -f docker-compose.production.yml ps > deployment-backup-$(date +%s).log || true
+          docker compose -f docker-compose.production.yml ps > deployment-backup-$(date +%s).log || true
 
           # Pull latest images
           echo "Pulling latest Docker images..."
-          sudo docker pull ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_NAMESPACE }}/communityboard-backend:latest
-          sudo docker pull ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_NAMESPACE }}/communityboard-frontend:latest
-          sudo docker pull ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_NAMESPACE }}/communityboard-etl:latest
+          docker pull ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_NAMESPACE }}/communityboard-backend:latest
+          docker pull ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_NAMESPACE }}/communityboard-frontend:latest
+          docker pull ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_NAMESPACE }}/communityboard-etl:latest
 
           # Stop existing containers gracefully
           echo "Stopping existing containers..."
-          sudo docker-compose -f docker-compose.production.yml down || true
+          docker compose -f docker-compose.production.yml down || true
 
           # Start new containers
           echo "Starting new containers..."
-          sudo docker-compose -f docker-compose.production.yml up -d
+          docker compose -f docker-compose.production.yml up -d
 
           # Wait for services to start
           echo "Waiting for services to be ready..."
@@ -225,13 +230,13 @@ jobs:
 
           if [ $attempt -gt $max_attempts ]; then
             echo "❌ Backend health check failed after $max_attempts attempts"
-            sudo docker-compose -f docker-compose.production.yml logs backend
+            docker compose -f docker-compose.production.yml logs backend
             exit 1
           fi
 
           # Verify all containers are running
           echo "Verifying all containers are running..."
-          sudo docker-compose -f docker-compose.production.yml ps
+          docker compose -f docker-compose.production.yml ps
 
           echo "✅ Production deployment completed successfully!"
           EOF
