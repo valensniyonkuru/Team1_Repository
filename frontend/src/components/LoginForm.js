@@ -13,7 +13,7 @@ const LoginForm = ({ email, password, setEmail, setPassword, error, setError, ha
           <label htmlFor="login-email" className="font-inter text-sm font-medium leading-normal text-ping-body-primary">
             Email
           </label>
-          <div className={`flex items-center gap-2.5 rounded-lg border px-4 py-3 transition-colors focus-within:border-ping-dark focus-within:bg-white ${error ? "border-ping-error-border bg-ping-error-bg" : "border-ping-input-border bg-ping-input-bg"}`}>
+          <div className={`flex items-center gap-2.5 rounded-lg border px-4 py-3 ${error ? "border-ping-error-border bg-ping-error-bg" : "border-ping-input-border bg-ping-input-bg transition-colors focus-within:border-ping-dark focus-within:bg-white"}`}>
             <MailIcon color={error ? "#c81e1e" : "#5a6f7c"} />
             <input
               id="login-email"
@@ -67,11 +67,6 @@ const LoginForm = ({ email, password, setEmail, setPassword, error, setError, ha
           </div>
         </div>
       </div>
-      <div className="flex w-full items-center justify-end -mt-3 mb-2">
-        <Link to="/forgot-password" className="font-inter text-sm font-medium text-ping-dark hover:underline">
-          Forgot password?
-        </Link>
-      </div>
       {/* Button + Link */}
       <div className="flex flex-col gap-5">
         <button
@@ -81,13 +76,13 @@ const LoginForm = ({ email, password, setEmail, setPassword, error, setError, ha
         >
           Log In
         </button>
-        <div className="flex items-center justify-center gap-1">
+        <div className="flex items-center justify-center gap-[5px]">
           <span className="font-inter text-sm font-medium text-ping-body">
             Don't have an account?
           </span>
           <Link
             to="/register"
-            className="px-2 py-1 font-inter text-sm font-medium text-ping-orange underline"
+            className="p-2 font-inter text-sm font-medium text-ping-orange underline"
           >
             Create one now
           </Link>
