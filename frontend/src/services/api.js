@@ -2,13 +2,31 @@ import axios from "axios";
 
 const API = axios.create({ baseURL: "/api" });
 
+const AUTH_PUBLIC_PATHS = [
+  "/auth/login",
+  "/auth/register",
+  "/auth/refresh",
+  "/auth/verify-email",
+  "/auth/resend-verification",
+  "/auth/forgot-password",
+  "/auth/reset-password",
+];
+
 API.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  const isPublicAuthEndpoint = AUTH_PUBLIC_PATHS.some((path) =>
+    config.url?.includes(path)
+  );
+  if (!isPublicAuthEndpoint) {
+    const token = localStorage.getItem("token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
   }
   return config;
 });
+
+// Singleton promise to prevent concurrent token refresh calls
+let refreshPromise = null;
 
 // Response interceptor for catching 401s and refreshing tokens
 API.interceptors.response.use(
@@ -21,13 +39,19 @@ API.interceptors.response.use(
       originalRequest._retry = true;
       
       try {
-        const refreshToken = localStorage.getItem("refreshToken");
-        if (!refreshToken) {
-          throw new Error("No refresh token available");
+        if (!refreshPromise) {
+          const refreshToken = localStorage.getItem("refreshToken");
+          if (!refreshToken) {
+            throw new Error("No refresh token available");
+          }
+
+          // Call refresh endpoint directly using axios (to avoid infinite interceptor loops)
+          refreshPromise = axios
+            .post("/api/auth/refresh", { refreshToken })
+            .finally(() => { refreshPromise = null; });
         }
 
-        // Call refresh endpoint directly using axios (to avoid infinite interceptor loops)
-        const res = await axios.post("/api/auth/refresh", { refreshToken });
+        const res = await refreshPromise;
         
         const payload = res.data.data || res.data;
         const newAccessToken = payload.accessToken;
@@ -80,7 +104,18 @@ export const categoryAPI = {
   getAll: () => API.get("/categories"),
 };
 
-// TODO: Add comment API calls
-// TODO: Add search API calls
+export const commentAPI = {
+  getByPostId: (postId) => API.get(`/posts/${postId}/comments`),
+  create: (postId, data) => API.post(`/posts/${postId}/comments`, data),
+  update: (postId, commentId, data) => API.put(`/posts/${postId}/comments/${commentId}`, data),
+  delete: (postId, commentId) => API.delete(`/posts/${postId}/comments/${commentId}`),
+};
+
+export const accountAPI = {
+  getMe: () => API.get("/account/me"),
+  changePassword: (data) => API.put("/account/change-password", data),
+  changeEmail: (data) => API.put("/account/change-email", data),
+  deleteAccount: () => API.delete("/account/delete-account"),
+};
 
 export default API;

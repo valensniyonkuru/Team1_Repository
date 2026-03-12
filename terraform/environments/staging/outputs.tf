@@ -1,11 +1,11 @@
-output "instance_public_ip" {
-  description = "Staging EC2 instance public IP"
-  value       = module.ec2.instance_public_ip
+output "alb_dns_name" {
+  description = "ALB DNS name — access the staging app at http://<alb_dns_name>"
+  value       = module.ec2.alb_dns_name
 }
 
-output "instance_id" {
-  description = "Staging EC2 instance ID"
-  value       = module.ec2.instance_id
+output "asg_name" {
+  description = "Auto Scaling Group name"
+  value       = module.ec2.asg_name
 }
 
 output "vpc_id" {
