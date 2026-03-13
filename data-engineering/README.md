@@ -167,8 +167,10 @@ Each run **truncates then reloads** all analytics tables to ensure data is alway
 | `analytics_daily_activity` | Post counts per day per category | ~59 |
 | `analytics_user_engagement` | Per-user posts, comments, and total engagement | 25 |
 | `analytics_category_trends` | Total posts per category | 4 |
-| `analytics_top_contributors` | Top 5 most engaged users | 5 |
-| `analytics_content_stats` | Average title and content length per day | ~54 |
+| `analytics_top_contributors` | Top 10 most engaged users | 10 |
+| `analytics_content_stats` | Average title and content length per day | ~52|
+| `analytics_posts_day_of_week` | Post counts grouped by day of week | 7 |
+
 
 ---
 
@@ -184,9 +186,10 @@ The analytics queries module (`analytics_queries.py`) reads from the analytics t
 |---|---|---|
 | `get_posts_per_category()` | Total post counts by category | `posts_per_category.csv` |
 | `get_activity_trends()` | Daily post counts by category | `activity_trends.csv` |
-| `get_top_contributors()` | Top 5 users ranked by total engagement | `top_contributors.csv` |
+| `get_top_contributors()` | Top 10 users ranked by total engagement | `top_contributors.csv` |
 | `get_most_active_days()` | Top 10 days by total post count | `most_active_days.csv` |
 | `get_content_stats()` | Average title and content length per day | `content_stats.csv` |
+| `get_posts_by_day_of_week()` | Post counts grouped by day of week | `posts_day_of_week.csv` |
 
 ---
 
@@ -195,30 +198,40 @@ The analytics queries module (`analytics_queries.py`) reads from the analytics t
 Based on seed `SEED=2605`, `N_USERS=25`, `N_POSTS=60`, `N_COMMENTS=240`:
 
 ### Posts per Category
+
 | Category | Total Posts |
 |---|---|
-| DISCUSSION | 16 |
+| DISCUSSION | 18 |
 | EVENT | 16 |
-| NEWS | 15 |
-| ALERT | 13 |
+| NEWS | 14 |
+| ALERT | 12 |
 
-### Analytics Table Row Counts
-| Table | Expected Rows |
-|---|---|
-| `analytics_daily_activity` | ~59 |
-| `analytics_user_engagement` | 25 |
-| `analytics_category_trends` | 4 |
-| `analytics_top_contributors` | 5 |
-| `analytics_content_stats` | ~54 |
+### Top 10 Contributors
 
-### Top 5 Contributors
 | Rank | Name | Posts | Comments | Total |
 |---|---|---|---|---|
-| 1 | Michael Franklin | 4 | 17 | 21 |
-| 2 | Debra Collier | 4 | 13 | 17 |
-| 3 | Ryan Green | 5 | 11 | 16 |
-| 4 | Jennifer Morris | 2 | 14 | 16 |
-| 5 | Michelle King | 2 | 14 | 16 |
+| 1 | Taylor Flores | 5 | 14 | 19 |
+| 2 | Jolly Burabyo | 4 | 13 | 17 |
+| 3 | John Chavez | 2 | 15 | 17 |
+| 4 | Rodney Bauer | 4 | 11 | 15 |
+| 5 | Mark Mcclain | 4 | 11 | 15 |
+| 6 | Ryan Green | 4 | 10 | 14 |
+| 7 | Shannon Henderson | 2 | 12 | 14 |
+| 8 | Jennifer Morris | 4 | 9 | 13 |
+| 9 | Jill Walsh | 2 | 10 | 12 |
+| 10 | Sharon Brady | 2 | 10 | 12 |
+
+### Posts by Day of Week
+
+| Day | Post Count |
+|---|---|
+| Friday | 14 |
+| Tuesday | 10 |
+| Sunday | 9 |
+| Thursday | 9 |
+| Monday | 8 |
+| Wednesday | 6 |
+| Saturday | 4 |
 
 ---
 
@@ -230,3 +243,4 @@ Based on seed `SEED=2605`, `N_USERS=25`, `N_POSTS=60`, `N_COMMENTS=240`:
 - Running seed against a shared staging DB with `SEED_RESET=1` will truncate other teams' data — coordinate before running
 - Use `SEED_RESET=0` to append data without truncating existing records
 - Use `--no-deps` flag when running ETL against staging to bypass the backend health check dependency
+- Coordinate with the team before running seed against staging to avoid data conflicts
