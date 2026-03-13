@@ -1,4 +1,5 @@
-﻿import React, { useEffect, useState, useCallback, useRef } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
+import { useLocation } from "react-router-dom";
 import { postAPI, categoryAPI } from "../services/api";
 import CreatePostModal from "../components/CreatePostModal";
 import PostCard from "../components/PostCard";
@@ -14,6 +15,7 @@ const DEBOUNCE_MS = 350;
 
 const Home = () => {
   const { user } = useAuth();
+  const location = useLocation();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -108,6 +110,16 @@ const Home = () => {
   useEffect(() => {
     if (!isDateFiltered) fetchPosts();
   }, [fetchPosts, isDateFiltered]);
+
+  // Re-fetch when navigated here after creating a post from the standalone page
+  useEffect(() => {
+    if (location.state?.postCreated) {
+      setCurrentPage(1);
+      if (isDateFiltered) fetchAllForDateFilter(); else fetchPosts();
+      // Clear the state so a browser back/forward doesn't re-trigger
+      window.history.replaceState({}, '');
+    }
+  }, [location.state?.postCreated]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Reset to page 1 when filters change
   useEffect(() => {
