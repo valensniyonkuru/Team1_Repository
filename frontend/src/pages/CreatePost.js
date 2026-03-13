@@ -30,7 +30,7 @@ const CreatePost = () => {
     e.preventDefault();
     try {
       await postAPI.create({ title, content, categoryId: categoryId || null });
-      navigate("/");
+      navigate("/", { state: { postCreated: Date.now() } });
     } catch (err) {
       setError("Failed to create post");
     }
