@@ -44,7 +44,11 @@ public class AnalyticsService {
                         .topContributors(topContributorsFuture.join())
                         .contentStats(contentStatsFuture.join())
                         .postsByDayOfWeek(postsByDayOfWeekFuture.join())
-                        .build());
+                        .build())
+                .exceptionally(ex -> {
+                    Throwable cause = ex.getCause() != null ? ex.getCause() : ex;
+                    throw new RuntimeException("Analytics overview failed: " + cause.getMessage(), cause);
+                });
     }
 
     @Async
