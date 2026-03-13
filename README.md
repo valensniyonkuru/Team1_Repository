@@ -265,12 +265,12 @@ While GitHub Actions automates deployment, DevOps engineers or maintainers might
 
 **Production Server Details:**
 - **Instance Name:** `production-app-instance`
-- **Public IP:** `13.49.109.150`
+- **Public IP:** `http://13.60.89.185:3000/`
 
 ### 1. Connect via SSH
 Ensure you have the private deployment key locally.
 ```bash
-ssh -i deploy_key ubuntu@13.49.109.150
+ssh -i deploy_key ubuntu@13.60.89.185:3000
 ```
 
 ### 2. Verify Running Containers
