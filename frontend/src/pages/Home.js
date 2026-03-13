@@ -119,7 +119,7 @@ const Home = () => {
       // Clear the state so a browser back/forward doesn't re-trigger
       window.history.replaceState({}, '');
     }
-  }, [location.state?.postCreated]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [location.state?.postCreated]); // only re-run when postCreated flag changes
 
   // Reset to page 1 when filters change
   useEffect(() => {
