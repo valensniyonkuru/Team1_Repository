@@ -91,8 +91,8 @@ Welcome to the team! Follow these steps to get your local environment running in
    ```
 
 5. **Verify the Services**
-   - **Frontend:** [http://localhost:3000](http://localhost:3000)
-   - **Backend API Docs:** [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
+   - **Frontend:** http://13.60.89.185:3000/
+   - **Backend API Docs:** http://13.60.89.185:8080/swagger-ui/index.html
    - **Database Logs:** `docker-compose logs -f postgres`
 
 ---
@@ -265,12 +265,12 @@ While GitHub Actions automates deployment, DevOps engineers or maintainers might
 
 **Production Server Details:**
 - **Instance Name:** `production-app-instance`
-- **Public IP:** `13.49.109.150`
+- **Public IP:** `http://13.60.89.185:3000/`
 
 ### 1. Connect via SSH
 Ensure you have the private deployment key locally.
 ```bash
-ssh -i deploy_key ubuntu@13.49.109.150
+ssh -i deploy_key ubuntu@13.60.89.185:3000
 ```
 
 ### 2. Verify Running Containers
