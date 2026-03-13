@@ -169,11 +169,11 @@ def transform_category_trends(posts_df: pd.DataFrame) -> pd.DataFrame:
         log.error("Failed to transform category trends: %s", e)
         raise
 def transform_top_contributors(user_engagement_df: pd.DataFrame) -> pd.DataFrame:
-    """Top 5 most engaged users."""
+    """Top 10 most engaged users."""
     if user_engagement_df.empty:
         return pd.DataFrame()
     try:
-        return user_engagement_df.head(5).reset_index(drop=True)
+        return user_engagement_df.head(10).reset_index(drop=True)
     except Exception as e:
         log.error("Failed to transform top contributors: %s", e)
         raise
